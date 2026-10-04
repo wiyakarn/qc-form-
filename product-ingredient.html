@@ -63,7 +63,8 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
   <h1>📋 Product Ingredient</h1>
   <div class="sec"><b>แบรนด์ (เลือกได้หลายแบรนด์)</b>
     <div class="brands" id="brands"></div>
-    <div class="bar"><button class="btn" onclick="addBrand()">+ เพิ่มแบรนด์</button><button class="btn" onclick="upLogo()">🖼 อัปโหลดโลโก้แบรนด์ที่เลือก</button></div>
+    <div class="row" style="margin-top:6px"><input type="text" id="newBrand" placeholder="ชื่อแบรนด์ใหม่"><button class="btn" onclick="addBrand()">+ เพิ่ม</button></div>
+    <div class="row"><select id="logoFor"></select><button class="btn" onclick="$('logoFile').click()">🖼 อัปโหลดโลโก้</button></div>
     <input type="file" id="logoFile" accept="image/*" hidden>
     <div style="font-size:11px;color:var(--tx2);margin-top:4px">โลโก้แสดงที่มุมขวาบนของฟอร์ม · แบรนด์ที่ยังไม่มีโลโก้จะแสดงเป็นชื่อ</div>
   </div>
@@ -128,6 +129,7 @@ const allBrands=()=>[...DEF_BRANDS,...(S.customBrands||[])];
 const logoOf=b=>(S.logos&&S.logos[b])||(b==="TPC"?TPC_LOGO:"");
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function brandsUI(){
+  const cur=$("logoFor").value;$("logoFor").innerHTML=allBrands().map(b=>`<option${b===cur?" selected":""}>${esc(b)}</option>`).join("");
   $("brands").innerHTML=allBrands().map(b=>`<label class="chip ${S.brands.includes(b)?"on":""}"><input type="checkbox" ${S.brands.includes(b)?"checked":""} data-b="${esc(b)}">${esc(b)}</label>`).join("");
   $("brands").querySelectorAll("input").forEach(i=>i.onchange=()=>{const b=i.dataset.b;S.brands=i.checked?[...S.brands,b]:S.brands.filter(x=>x!==b);brandsUI();render()});
 }
@@ -162,9 +164,8 @@ $("cautions").oninput=e=>{S.cautions=e.target.value.split("\n");render()};
 document.querySelectorAll("[name=halal]").forEach(r=>r.onchange=()=>{S.halal=r.value;render()});
 const readImg=(f,max,cb)=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);cb(c.toDataURL(f.type==="image/png"?"image/png":"image/jpeg",.85))};im.src=fr.result};fr.readAsDataURL(f)};
 $("photos").onchange=e=>{[...e.target.files].forEach(f=>readImg(f,500,d=>{S.photos.push(d);render()}));e.target.value=""};
-function addBrand(){const n=(prompt("ชื่อแบรนด์ใหม่")||"").trim();if(!n||allBrands().includes(n))return;S.customBrands.push(n);S.brands.push(n);brandsUI();render()}
-function upLogo(){if(!S.brands.length)return alert("เลือกแบรนด์ก่อน");$("logoFile").click()}
-$("logoFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const b=S.brands.length===1?S.brands[0]:prompt("ใส่โลโก้ให้แบรนด์ไหน?\n"+S.brands.join(", "),S.brands[S.brands.length-1]);if(!b||!S.brands.includes(b))return;readImg(f,300,d=>{S.logos[b]=d;render()});e.target.value=""};
+function addBrand(){const n=$("newBrand").value.trim();if(!n||allBrands().includes(n))return;S.customBrands.push(n);S.brands.push(n);$("newBrand").value="";brandsUI();render()}
+$("logoFile").onchange=e=>{const f=e.target.files[0],b=$("logoFor").value;if(!f||!b)return;readImg(f,300,d=>{S.logos[b]=d;render()});e.target.value=""};
 function preset(k){const keep={brands:S.brands,customBrands:S.customBrands,logos:S.logos,photos:[]};S=Object.assign(blank(),JSON.parse(JSON.stringify(P[k])),keep);fieldsUI();listsUI();brandsUI();render()}
 function exportJ(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:"application/json"}));a.download=(S.code||"product")+"-ingredient.json";a.click()}
 $("imp").onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{S=Object.assign(blank(),JSON.parse(t));fieldsUI();listsUI();brandsUI();render()}catch(x){alert("ไฟล์ไม่ถูกต้อง")}});e.target.value=""};
