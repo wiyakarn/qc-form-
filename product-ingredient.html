@@ -79,6 +79,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
 <div class="app">
 <div class="panel">
   <h1>📋 Product Ingredient</h1>
+  <div class="bar" style="margin:0 0 10px"><button class="btn p" onclick="newItem()">＋ สินค้าใหม่</button><button class="btn" onclick="openLib()">📚 รายการที่บันทึกไว้</button></div>
   <div class="sec"><b>แบรนด์ (เลือกได้หลายแบรนด์)</b>
     <div class="brands" id="brands"></div>
     <div class="row" style="margin-top:6px"><input type="text" id="newBrand" placeholder="ชื่อแบรนด์ใหม่"><button class="btn" onclick="addBrand()">+ เพิ่ม</button></div>
@@ -509,6 +510,11 @@ function openReview(){
     $("rvGo").disabled=true;keys.forEach(k=>$("st-"+k).textContent="");
     const n=await runExport(keys,(k,m)=>{const e=$("st-"+k);if(e)e.textContent=m});
     $("rvMsg").textContent=n?`บันทึกแล้ว ${n}/${keys.length} ไฟล์`:"ยังไม่ได้บันทึกไฟล์";$("rvGo").disabled=false;cnt()};
+}
+function newItem(){
+  const keep={brands:S.brands,customBrands:S.customBrands,logos:S.logos,lang:S.lang};
+  S=Object.assign(blank(),keep);fieldsUI();listsUI();brandsUI();phUI();render();
+  $("libSt").textContent="เริ่มสินค้าใหม่แล้ว กรอกข้อมูล หรือกด “แนบสเปค” แล้วกด “บันทึกเข้าคลัง”";$("code").focus();
 }
 function closeOv(id){const o=document.getElementById(id);if(o)o.remove()}
 /* ===== คลังข้อมูล: แบรนด์ → หัวข้อ → สินค้า → ตำหนิ (+รูป) ===== */
