@@ -66,6 +66,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
 .rr.off input[type=text],.rr.off textarea{opacity:.45}
 .imgs{display:flex;gap:8px;flex-wrap:wrap}.imgs label{margin:0;position:relative;cursor:pointer}.imgs img{width:90px;height:72px;object-fit:cover;border:2px solid var(--brd);border-radius:6px}.imgs input:checked+img{border-color:var(--grn)}
 .imgs input{position:absolute;top:4px;left:4px}
+.rthumbs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px 24px}.rthumbs .t{position:relative}.rthumbs img{width:64px;height:52px;object-fit:cover;border:2px solid var(--brd);border-radius:5px;display:block}.rthumbs input:checked+img{border-color:var(--grn)}.rthumbs input{position:absolute;top:3px;left:3px;z-index:1}.rthumbs .x{position:absolute;top:0;right:0;background:#fff;padding:0 4px;line-height:1.3}
 .stale{display:inline-block;background:#fef8ec;border:1px solid #e6c36a;border-radius:10px;padding:0 8px;font-size:11px;margin-left:6px}
 .pn{display:flex;gap:12px;align-items:center;justify-content:space-between}.pn .pt{flex:1;min-width:0}.pn .pp{display:flex;gap:6px;flex-shrink:0}.pn .pp img{width:92px;height:76px;object-fit:cover;border-radius:4px;border:1px solid #cfe3d7;background:#fff}
 .dp{display:flex;gap:4px;flex-wrap:wrap;margin:2px 0 4px 10px}.dp img{width:56px;height:46px;object-fit:cover;border:1px solid var(--brd);border-radius:3px}
@@ -116,7 +117,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
     <label>รูปสินค้า 2–3 รูป (แสดงด้านขวา) <span id="phCnt" style="float:right"></span></label><input type="file" id="photos" accept="image/*" multiple>
     <div class="imgs" id="phList" style="margin-top:6px"></div>
     <label style="display:flex;gap:6px;align-items:center;color:var(--tx);font-size:13px"><input type="checkbox" id="showPh"> ใส่รูปสินค้าในเอกสาร</label>
-    <label style="display:flex;gap:6px;align-items:center;color:var(--tx);font-size:13px"><input type="checkbox" id="showDp"> ใส่รูปตำหนิในเอกสาร</label>
+    <label style="display:flex;gap:6px;align-items:center;color:var(--tx);font-size:13px"><input type="checkbox" id="showDp"> ใส่รูปประกอบรายการ (ตำหนิ ฯลฯ) ในเอกสาร</label>
     <input type="file" id="dpFile" accept="image/*" multiple hidden>
   </div>
   <div class="sec"><b>สารก่อภูมิแพ้ / ฮาลาล</b>
@@ -201,7 +202,7 @@ zh:{look:"产品特性",allergen:"食品过敏原 (Food Allergen)",halal:"清真
 ja:{look:"製品特性",allergen:"食品アレルゲン (Food Allergen)",halal:"ハラール認証番号 (Halal)",phys:"物理規格",store:"保管温度と賞味期限",recv:"受入時の状態",rej:"不良と許容率",total:"許容不良合計 (Total Defects)",caut:"注意事項："}};
 const LANGN={en:"English",th:"Thai",zh:"Simplified Chinese",ja:"Japanese"};
 const TKEYS=["nameTh","menu","desc","allergen","phys","store","recv","rej","defect","cautions"];
-const PHK0=["rej","defect"],ROWK=["phys","store","recv","rej","defect"];
+const PHK0=["phys","store","recv","rej","defect"],ROWK=["phys","store","recv","rej","defect"];
 const srcKey=()=>JSON.stringify(TKEYS.map(k=>ROWK.includes(k)?(S[k]||[]).map(r=>[r[0],r[1]]):S[k]));
 function view(){const t=S.tr&&S.tr[S.lang];if(!(S.lang!=="orig"&&t&&t.src===srcKey()))return S;const d=Object.assign({},t.data);PHK0.forEach(k=>{d[k]=(d[k]||[]).map((r,i)=>[r[0],r[1],((S[k]||[])[i]||[])[2]])});return Object.assign({},S,d)}
 function render(){
@@ -243,30 +244,46 @@ let SM=null,R=null;
   if(!SM){$("trBtn").disabled=true;$("trBtn").title="ต้องเปิดผ่านลิงก์ Claude";if(!TRBUSY)$("trSt").textContent+=" · แปลอัตโนมัติใช้ได้เมื่อเปิดผ่านลิงก์ Claude"}})();
 const SINGLES=[["code","รหัสสินค้า"],["nameTh","ชื่อสินค้า"],["nameEn","ชื่อ English"],["menu","เมนู/กลุ่ม"],["desc","คำอธิบาย"],["allergen","สารก่อภูมิแพ้"]];
 const SECS=[["phys","มาตรฐานทางกายภาพ",2],["store","อุณหภูมิและอายุการจัดเก็บ",2],["recv","ลักษณะสินค้า ณ จุดรับ",1],["rej","ตำหนิที่ไม่ยอมรับ",1],["defect","ตำหนิที่ยอมรับได้",2],["cautions","ข้อควรระวัง",1]];
-function parseSpec(lines){
-  lines=lines.map(l=>l.replace(/ /g," ").replace(/\s+$/,"")).filter(l=>l.trim());
-  const prods=[],pre=[];let cur=null;
-  for(const raw of lines){const m=raw.replace(/\t+/g," ").trim().match(/^(\d{5,})\s+(.+)$/);
-    if(m){cur={code:m[1],nameTh:m[2].trim(),raw:[]};prods.push(cur)}else if(cur)cur.raw.push(raw);else pre.push(raw.trim())}
+function parseSpec(lines,imgAt){
+  imgAt=imgAt||{};
+  const L0=lines.map((l,i)=>({l:l.replace(/ /g," ").replace(/\s+$/,""),i})).filter(x=>x.l.trim()||(imgAt[x.i]||[]).length);
+  const prods=[],pre=[],extras=[];let cur=null;
+  for(const x of L0){const m=x.l.replace(/\t+/g," ").trim().match(/^(\d{5,})\s+(.+)$/);
+    if(m){cur={code:m[1],nameTh:m[2].trim(),raw:[]};prods.push(cur)}
+    else if(cur)cur.raw.push(x);
+    else{if(x.l.trim())pre.push(x.l.trim());(imgAt[x.i]||[]).forEach(im=>extras.push(im.src))}}
   const menu=pre.filter(l=>!/SPECIFICATION|ST\s*NDARD|OPERATION/i.test(l)).pop()||"";
-  return prods.map(p=>{
-    const o={code:p.code,nameTh:p.nameTh,nameEn:"",menu,desc:"",allergen:"",phys:[],store:[],recv:[],rej:[],defect:[],cautions:[]};let sec="head";
-    for(const r of p.raw){
-      const t=r.replace(/\t+/g," ").replace(/\s+/g," ").trim(),parts=r.trim().split(/\t+/).map(s=>s.trim()).filter(Boolean);
-      if(/^ลักษณะสินค้า$/.test(t)){sec="look";continue}
-      if(/^มาตรฐานทางกายภาพ/.test(t)){sec="phys";continue}
-      if(/^อุณหภูมิและอายุการจัดเก็บ/.test(t)){sec="store";continue}
-      if(/^ลักษณะสินค้า ?ณ ?จุดรับ/.test(t)){sec="recv";continue}
-      if(/^ตำหนิและ ?%/.test(t)){sec="rej";continue}
-      if(/^ตำหนิที่ยอมรับได้โดยรวม/.test(t)){sec="defect";continue}
-      if(/^ข้อควรระวัง/.test(t)){sec="cautions";const rest=t.replace(/^ข้อควรระวัง ?:?/,"").trim();if(rest)o.cautions.push(rest);continue}
-      if(sec==="head"){if(!o.nameEn)o.nameEn=t;else o.desc+=(o.desc?" ":"")+t}
-      else if(sec==="look"){if(/Food Allergen/i.test(t))o.allergen=t.replace(/^.*Food Allergen ?\)? ?/i,"").trim()}
-      else if(sec==="phys"||sec==="store"||sec==="defect")o[sec].push([parts[0]||t,parts.slice(1).join(" ")]);
-      else if(sec==="recv"||sec==="rej")o[sec].push([t,""]);
-      else if(sec==="cautions")o.cautions.push(t);
+  const out=prods.map(p=>{
+    const o={code:p.code,nameTh:p.nameTh,nameEn:"",menu,desc:"",allergen:"",phys:[],store:[],recv:[],rej:[],defect:[],cautions:[],photos:[],extra:[]};let sec="head";const pend={};
+    const LS=["phys","store","recv","rej","defect"];
+    const addRow=(k,row)=>{row[2]=pend[k]||[];pend[k]=[];o[k].push(row)};
+    for(const rr of p.raw){
+      const r=rr.l;
+      (function(){
+        if(!r.trim())return;
+        const t=r.replace(/\t+/g," ").replace(/\s+/g," ").trim(),parts=r.trim().split(/\t+/).map(s=>s.trim()).filter(Boolean);
+        if(/^ลักษณะสินค้า$/.test(t)){sec="look";return}
+        if(/^มาตรฐานทางกายภาพ/.test(t)){sec="phys";return}
+        if(/^อุณหภูมิและอายุการจัดเก็บ/.test(t)){sec="store";return}
+        if(/^ลักษณะสินค้า ?ณ ?จุดรับ/.test(t)){sec="recv";return}
+        if(/^ตำหนิและ ?%/.test(t)){sec="rej";return}
+        if(/^ตำหนิที่ยอมรับได้โดยรวม/.test(t)){sec="defect";return}
+        if(/^ข้อควรระวัง/.test(t)){sec="cautions";const rest=t.replace(/^ข้อควรระวัง ?:?/,"").trim();if(rest)o.cautions.push(rest);return}
+        if(sec==="head"){if(!o.nameEn)o.nameEn=t;else o.desc+=(o.desc?" ":"")+t}
+        else if(sec==="look"){if(/Food Allergen/i.test(t))o.allergen=t.replace(/^.*Food Allergen ?\)? ?/i,"").trim()}
+        else if(sec==="phys"||sec==="store"||sec==="defect")addRow(sec,[parts[0]||t,parts.slice(1).join(" ")]);
+        else if(sec==="recv"||sec==="rej")addRow(sec,[t,""]);
+        else if(sec==="cautions")o.cautions.push(t);
+      })();
+      // รูปที่อยู่ในบรรทัดนี้ → จัดตามหัวข้อที่กำลังอ่านอยู่
+      (imgAt[rr.i]||[]).forEach(im=>{
+        if(sec==="head"||sec==="look")o.photos.push(im.src);
+        else if(LS.includes(sec)){if(o[sec].length){const row=o[sec][o[sec].length-1];row[2]=(row[2]||[]).concat(im.src)}else pend[sec]=(pend[sec]||[]).concat(im.src)}
+        else o.extra.push(im.src)});
     }
+    LS.forEach(k=>{if((pend[k]||[]).length)o.extra.push(...pend[k])});
     return o});
+  out.extras=extras;return out;
 }
 const MIME={png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",gif:"image/gif",webp:"image/webp"};
 function blobToData(blob,max){return new Promise(res=>{const u=URL.createObjectURL(blob),im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res({src:c.toDataURL("image/jpeg",.85),w:im.width})};im.onerror=()=>res(null);im.src=u})}
@@ -277,17 +294,22 @@ async function readDocx(file){
   const doc=new DOMParser().parseFromString(await f.async("string"),"application/xml");
   const W="http://schemas.openxmlformats.org/wordprocessingml/2006/main",MC="http://schemas.openxmlformats.org/markup-compatibility/2006",A="http://schemas.openxmlformats.org/drawingml/2006/main",RN="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
   [...doc.getElementsByTagNameNS(MC,"Fallback")].forEach(n=>n.remove());
-  const lines=[];
-  for(const p of doc.getElementsByTagNameNS(W,"p")){let s="";const walk=n=>{for(const c of n.childNodes){if(c.nodeType!==1)continue;const l=c.localName;if(l==="pPr"||l==="rPr"||l==="p")continue;if(l==="t")s+=c.textContent;else if(l==="tab")s+="\t";else if(l==="br")s+=" ";else walk(c)}};walk(p);lines.push(s)}
-  const imgs=[];
-  try{const rels=new DOMParser().parseFromString(await z.file("word/_rels/document.xml.rels").async("string"),"application/xml"),map={};
-    for(const r of rels.getElementsByTagName("Relationship"))map[r.getAttribute("Id")]=r.getAttribute("Target");
-    const seen=new Set();
-    for(const b of doc.getElementsByTagNameNS(A,"blip")){const id=b.getAttributeNS(RN,"embed"),tg=map[id];if(!tg||seen.has(tg))continue;seen.add(tg);
-      const zf=z.file("word/"+tg.replace(/^\//,""))||z.file(tg.replace(/^\//,""));if(!zf)continue;
-      const ext=tg.split(".").pop().toLowerCase(),blob=new Blob([await zf.async("uint8array")],{type:MIME[ext]||"image/png"}),d=await blobToData(blob,500);
-      if(d&&d.w<=1200)imgs.push({on:false,src:d.src})}}catch(e){}
-  return{lines,imgs};
+  const map={},cache={},cnt={};
+  try{const rels=new DOMParser().parseFromString(await z.file("word/_rels/document.xml.rels").async("string"),"application/xml");
+    for(const r of rels.getElementsByTagName("Relationship"))map[r.getAttribute("Id")]=r.getAttribute("Target")}catch(e){}
+  const imgOf=async tg=>{if(cache[tg]!==undefined)return cache[tg];cache[tg]=null;
+    const zf=z.file("word/"+tg.replace(/^\//,""))||z.file(tg.replace(/^\//,""));if(!zf)return null;
+    const ext=tg.split(".").pop().toLowerCase(),blob=new Blob([await zf.async("uint8array")],{type:MIME[ext]||"image/png"}),d=await blobToData(blob,520);
+    return cache[tg]=(d&&d.w<=1200)?{src:d.src,key:tg}:null};
+  const ownP=n=>{while(n&&!(n.namespaceURI===W&&n.localName==="p"))n=n.parentNode;return n};
+  const lines=[],imgAt={};
+  for(const p of doc.getElementsByTagNameNS(W,"p")){let s="";const walk=n=>{for(const c of n.childNodes){if(c.nodeType!==1)continue;const l=c.localName;if(l==="pPr"||l==="rPr"||l==="p")continue;if(l==="t")s+=c.textContent;else if(l==="tab")s+="\t";else if(l==="br")s+=" ";else walk(c)}};walk(p);
+    const idx=lines.length;lines.push(s);
+    for(const b of p.getElementsByTagNameNS(A,"blip")){if(ownP(b)!==p)continue;const tg=map[b.getAttributeNS(RN,"embed")];if(!tg)continue;
+      const im=await imgOf(tg);if(!im)continue;cnt[im.key]=(cnt[im.key]||0)+1;(imgAt[idx]=imgAt[idx]||[]).push(im)}}
+  // รูปที่ซ้ำ 3 ที่ขึ้นไป (เช่น โลโก้/ลายพื้นหลังทุกหน้า) ถือเป็นของตกแต่ง ไม่นำเข้า · ซ้ำ 2 ที่ นำเข้าแต่ไม่ติ๊กไว้ให้
+  DUPSRC=new Set();Object.keys(imgAt).forEach(k=>{imgAt[k]=imgAt[k].filter(im=>cnt[im.key]<3);imgAt[k].forEach(im=>{if(cnt[im.key]>1)DUPSRC.add(im.src)});if(!imgAt[k].length)delete imgAt[k]});
+  return{lines,imgAt,imgs:[]};
 }
 async function readPdf(file){
   try{await lib("pdfjs")}catch(e){throw new Error("โหลดตัวอ่าน PDF ไม่สำเร็จ (ต้องต่ออินเทอร์เน็ต) ลองกด “วางข้อความ” แทน")}
@@ -300,12 +322,17 @@ async function readPdf(file){
   if(!lines.some(l=>l.trim()))throw new Error("PDF นี้เป็นภาพสแกน ไม่มีข้อความให้ดึง ลองใช้ไฟล์ Word หรือกรอกเอง");
   return{lines,imgs:[]};
 }
+let DUPSRC=new Set();
 function toReview(prods,imgs,name){
-  R={name,sel:0,mode:"replace",imgs:imgs||[],step:"review",products:prods.map(p=>({single:Object.fromEntries(SINGLES.map(([k])=>[k,{on:!!p[k],v:p[k]||""}])),lists:Object.fromEntries(SECS.map(([k,,n])=>[k,(p[k]||[]).map(r=>n===2?{on:true,a:r[0],b:r[1]}:{on:true,a:typeof r==="string"?r:r[0],b:""})]))}))};
+  const ex=[...(imgs||[]).map(m=>m.src||m),...(prods.extras||[]),...prods.flatMap(p=>p.extra||[])].filter((s,i,a)=>s&&a.indexOf(s)===i);
+  R={name,sel:0,mode:"replace",imgs:ex.map(src=>({on:false,src})),step:"review",products:prods.map(p=>({
+    photos:(p.photos||[]).map((src,i)=>({on:i<MAXP&&!DUPSRC.has(src),src})),
+    single:Object.fromEntries(SINGLES.map(([k])=>[k,{on:!!p[k],v:p[k]||""}])),
+    lists:Object.fromEntries(SECS.map(([k,,n])=>[k,(p[k]||[]).map(r=>{const im=(Array.isArray(r)?r[2]:null)||[];return n===2?{on:true,a:r[0],b:r[1],imgs:im.map(src=>({on:!DUPSRC.has(src),src}))}:{on:true,a:typeof r==="string"?r:r[0],b:"",imgs:im.map(src=>({on:!DUPSRC.has(src),src}))}})]))}))};
   showReview();
 }
-async function ingest(lines,imgs,name){
-  const prods=parseSpec(lines);
+async function ingest(lines,imgs,name,imgAt){
+  const prods=parseSpec(lines,imgAt);
   if(prods.length)return toReview(prods,imgs,name);
   if(SM){R={step:"busy"};showReview();
     try{const j=await SM.json("Extract a food ingredient specification from this text. Return JSON only: {\"code\":\"\",\"nameTh\":\"product name\",\"nameEn\":\"\",\"menu\":\"\",\"desc\":\"\",\"allergen\":\"\",\"phys\":[[\"label\",\"value\"]],\"store\":[[\"label\",\"shelf life\"]],\"recv\":[\"text\"],\"rej\":[\"text\"],\"defect\":[[\"label\",\"limit\"]],\"cautions\":[\"text\"]}. Use empty strings or arrays when absent. Keep the source language.\n\n"+lines.join("\n").slice(0,12000),{modelTier:"quick"});
@@ -320,11 +347,12 @@ $("specFile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(
     else if(/\.doc$/.test(n))throw new Error("ไฟล์ .doc รุ่นเก่าอ่านไม่ได้ ให้เปิดใน Word แล้วบันทึกเป็น .docx");
     else if(/\.(xlsx?|pptx?|zip)$/.test(n)||/^image\//.test(f.type))throw new Error("ชนิดไฟล์นี้ยังอ่านไม่ได้ ใช้ Word (.docx) PDF หรือ .txt");
     else d={lines:(await f.text()).split(/\r?\n/),imgs:[]};
-    await ingest(d.lines,d.imgs,f.name)}
+    await ingest(d.lines,d.imgs,f.name,d.imgAt)}
   catch(x){R={step:"err",msg:x.message||String(x)};showReview()}};
 function openPaste(){R={step:"paste"};showReview()}
 function closeReview(){R=null;const o=document.getElementById("ov");if(o)o.remove()}
-function rvRow(kind,k,i,it,two){return `<div class="rr ${it.on?"":"off"}"><input type="checkbox" ${it.on?"checked":""} data-f="on" data-s="${kind}" data-k="${k}" data-i="${i}"><input type="text" value="${esc(it.a)}" data-f="a" data-s="${kind}" data-k="${k}" data-i="${i}">${two?`<input type="text" value="${esc(it.b)}" placeholder="ค่า" data-f="b" data-s="${kind}" data-k="${k}" data-i="${i}" style="max-width:34%">`:""}<button class="btn x" data-rm="${k}" data-i="${i}">✕</button></div>`}
+function rvThumbs(imgs,ck,xk,extra){return (imgs||[]).length?`<div class="rthumbs">${imgs.map((m,j)=>`<span class="t"><label style="margin:0"><input type="checkbox" ${m.on?"checked":""} data-${ck}="${extra}${j}"><img src="${m.src}"></label><button class="btn x" data-${xk}="${extra}${j}">✕</button></span>`).join("")}</div>`:""}
+function rvRow(kind,k,i,it,two){return `<div class="rr ${it.on?"":"off"}"><input type="checkbox" ${it.on?"checked":""} data-f="on" data-s="${kind}" data-k="${k}" data-i="${i}"><input type="text" value="${esc(it.a)}" data-f="a" data-s="${kind}" data-k="${k}" data-i="${i}">${two?`<input type="text" value="${esc(it.b)}" placeholder="ค่า" data-f="b" data-s="${kind}" data-k="${k}" data-i="${i}" style="max-width:34%">`:""}${k!=="cautions"?`<button class="btn" data-radd="${k}:${i}" title="เพิ่มรูปให้รายการนี้">📷${(it.imgs||[]).length?" "+it.imgs.length:""}</button>`:""}<button class="btn x" data-rm="${k}" data-i="${i}">✕</button></div>${k!=="cautions"?rvThumbs(it.imgs,"rim","rimx",k+":"+i+":"):""}`}
 function showReview(){
   let o=document.getElementById("ov");if(!o){o=document.createElement("div");o.id="ov";o.className="ov";document.body.appendChild(o)}
   if(!R){o.remove();return}
@@ -334,10 +362,11 @@ function showReview(){
   else if(R.step==="paste")h=`<div class="mdh"><b>วางข้อความสเปค</b></div><div class="mdb"><textarea id="pasteTx" style="min-height:240px" placeholder="วางข้อความจากสเปคที่นี่ (ขึ้นต้นด้วยรหัสสินค้า แล้วตามด้วยชื่อ)"></textarea></div><div class="mdf"><button class="btn" onclick="closeReview()">ยกเลิก</button><button class="btn p" onclick="ingest($('pasteTx').value.split(/\\r?\\n/),[],'paste')">ดึงข้อมูล</button></div>`;
   else{
     const p=R.products[R.sel];
-    h=`<div class="mdh"><b>เลือกข้อมูลที่จะนำเข้า${R.name?` · <span style="font-weight:400;font-size:12px">${esc(R.name)}</span>`:""}</b>${R.products.length>1?`<select id="rvProd" style="width:auto">${R.products.map((q,i)=>`<option value="${i}" ${i===R.sel?"selected":""}>${esc(q.single.code.v)} ${esc(q.single.nameTh.v)}</option>`).join("")}</select>`:""}</div><div class="mdb" id="rvB">
+    h=`<div class="mdh"><b>ตรวจและเลือกข้อมูลที่จะนำเข้า${R.name?` · <span style="font-weight:400;font-size:12px">${esc(R.name)}</span>`:""}</b>${R.products.length>1?`<select id="rvProd" style="width:auto">${R.products.map((q,i)=>`<option value="${i}" ${i===R.sel?"selected":""}>${esc(q.single.code.v)} ${esc(q.single.nameTh.v)}</option>`).join("")}</select>`:""}</div><div class="mdb" id="rvB">
+    <div class="rs"><b>รูปสินค้า (ติ๊กได้ไม่เกิน 3 รูป)<span><button class="btn" data-padd="1">＋ เพิ่มรูป</button></span></b>${p.photos.length?rvThumbs(p.photos,"pim","pimx",""):'<div class="note">ไม่พบรูปสินค้าในไฟล์ · กด “＋ เพิ่มรูป”</div>'}</div>
     <div class="rs"><b>ข้อมูลสินค้า</b>${SINGLES.map(([k,n])=>{const it=p.single[k];return `<div class="rr ${it.on?"":"off"}"><input type="checkbox" ${it.on?"checked":""} data-f="on" data-s="single" data-k="${k}"><span class="lb">${n}</span>${k==="desc"?`<textarea data-f="v" data-s="single" data-k="${k}">${esc(it.v)}</textarea>`:`<input type="text" value="${esc(it.v)}" data-f="v" data-s="single" data-k="${k}">`}</div>`}).join("")}</div>
     ${SECS.map(([k,n,c])=>`<div class="rs"><b>${n}<span><button class="btn" data-all="${k}">ทั้งหมด</button> <button class="btn" data-none="${k}">ล้าง</button> <button class="btn" data-add="${k}">+ เพิ่มเอง</button></span></b>${p.lists[k].map((it,i)=>rvRow("list",k,i,it,c===2)).join("")||'<div class="note">ไม่พบข้อมูลในไฟล์ · กด “+ เพิ่มเอง”</div>'}</div>`).join("")}
-    ${R.imgs.length?`<div class="rs"><b>รูปในไฟล์ (ติ๊กเพื่อใช้เป็นรูปสินค้า)</b><div class="imgs">${R.imgs.map((m,i)=>`<label><input type="checkbox" ${m.on?"checked":""} data-img="${i}"><img src="${m.src}"></label>`).join("")}</div></div>`:""}
+    ${R.imgs.length?`<div class="rs"><b>รูปอื่นในไฟล์ที่ไม่ทราบหัวข้อ (ติ๊กเพื่อใช้เป็นรูปสินค้า)</b><div class="imgs">${R.imgs.map((m,i)=>`<label><input type="checkbox" ${m.on?"checked":""} data-img="${i}"><img src="${m.src}"></label>`).join("")}</div></div>`:""}
     </div><div class="mdf"><label style="display:flex;gap:10px;margin:0 auto 0 0;font-size:12px;color:var(--tx)"><span><input type="radio" name="rvm" value="replace" ${R.mode==="replace"?"checked":""}> แทนที่ส่วนที่เลือก</span><span><input type="radio" name="rvm" value="merge" ${R.mode==="merge"?"checked":""}> เพิ่มต่อท้าย</span></label><button class="btn" onclick="closeReview()">ยกเลิก</button><button class="btn p" onclick="doImport()">นำเข้าฟอร์ม</button></div>`}
   o.innerHTML=`<div class="md" role="dialog" aria-modal="true">${h}</div>`;
   const pr=$("rvProd");if(pr)pr.onchange=()=>{R.sel=+pr.value;showReview()};
@@ -347,20 +376,33 @@ document.addEventListener("input",ev=>{const x=ev.target;if(!R||!x.dataset||!x.d
   if(x.dataset.s==="single")p.single[x.dataset.k][x.dataset.f]=x.value;else p.lists[x.dataset.k][+x.dataset.i][x.dataset.f]=x.value});
 document.addEventListener("change",ev=>{const x=ev.target;if(!R||!R.products)return;const p=R.products[R.sel];
   if(x.dataset.img!==undefined){R.imgs[+x.dataset.img].on=x.checked;return}
+  if(x.dataset.pim!==undefined){const j=+x.dataset.pim;if(x.checked&&p.photos.filter(m=>m.on).length>=MAXP){x.checked=false;return}p.photos[j].on=x.checked;return}
+  if(x.dataset.rim!==undefined){const[k,i,j]=x.dataset.rim.split(":");p.lists[k][+i].imgs[+j].on=x.checked;return}
   if(x.dataset.f==="on"){(x.dataset.s==="single"?p.single[x.dataset.k]:p.lists[x.dataset.k][+x.dataset.i]).on=x.checked;x.closest(".rr").classList.toggle("off",!x.checked)}});
-document.addEventListener("click",ev=>{const x=ev.target.closest&&ev.target.closest("[data-rm],[data-add],[data-all],[data-none]");if(!x||!R||!R.products)return;const p=R.products[R.sel],d=x.dataset;
-  if(d.rm!==undefined)p.lists[d.rm].splice(+d.i,1);
-  else if(d.add!==undefined)p.lists[d.add].push({on:true,a:"",b:""});
+let RT=null;
+document.addEventListener("click",ev=>{const x=ev.target.closest&&ev.target.closest("[data-rm],[data-add],[data-all],[data-none],[data-radd],[data-padd],[data-rimx],[data-pimx]");if(!x||!R||!R.products)return;const p=R.products[R.sel],d=x.dataset;
+  if(d.radd!==undefined){const[k,i]=d.radd.split(":");RT={k,i:+i};$("rvImg").click();return}
+  if(d.padd!==undefined){RT={prod:true};$("rvImg").click();return}
+  if(d.rimx!==undefined){const[k,i,j]=d.rimx.split(":");p.lists[k][+i].imgs.splice(+j,1)}
+  else if(d.pimx!==undefined){p.photos.splice(+d.pimx,1)}
+  else if(d.rm!==undefined)p.lists[d.rm].splice(+d.i,1);
+  else if(d.add!==undefined)p.lists[d.add].push({on:true,a:"",b:"",imgs:[]});
   else if(d.all!==undefined)p.lists[d.all].forEach(i=>i.on=true);
   else p.lists[d.none].forEach(i=>i.on=false);
   const sc=$("rvB").scrollTop;showReview();$("rvB").scrollTop=sc});
+{const inp=document.createElement("input");inp.type="file";inp.id="rvImg";inp.accept="image/*";inp.multiple=true;inp.hidden=true;document.body.appendChild(inp);
+ inp.onchange=async e=>{const fs=[...e.target.files];e.target.value="";if(!R||!R.products||!RT)return;const p=R.products[R.sel];
+  for(const f of fs){const src=await readImgP(f,480);
+    if(RT.prod)p.photos.push({on:p.photos.filter(m=>m.on).length<MAXP,src});
+    else{const it=p.lists[RT.k][RT.i];if(it&&(it.imgs=it.imgs||[]).length<MAXD)it.imgs.push({on:true,src})}}
+  const sc=$("rvB")?$("rvB").scrollTop:0;showReview();if($("rvB"))$("rvB").scrollTop=sc}}
 function doImport(){
   const p=R.products[R.sel],rep=R.mode==="replace";
   SINGLES.forEach(([k])=>{const it=p.single[k];if(it.on&&it.v.trim())S[k]=it.v.trim()});
   SECS.forEach(([k,,c])=>{const its=p.lists[k].filter(i=>i.on&&i.a.trim());if(!its.length)return;
     if(k==="cautions"){const a=its.map(i=>i.a.trim());S.cautions=rep?a:S.cautions.filter(Boolean).concat(a)}
-    else{const a=its.map(i=>[i.a.trim(),c===2?i.b.trim():""]);S[k]=rep?a:(S[k]||[]).concat(a)}});
-  const ph=R.imgs.filter(m=>m.on).map(m=>m.src);if(ph.length)S.photos=(rep?ph:S.photos.concat(ph)).slice(0,3);
+    else{const a=its.map(i=>{const im=(i.imgs||[]).filter(m=>m.on).map(m=>m.src).slice(0,MAXD),row=[i.a.trim(),c===2?i.b.trim():""];if(im.length)row[2]=im;return row});S[k]=rep?a:(S[k]||[]).concat(a)}});
+  const ph=[...p.photos.filter(m=>m.on),...R.imgs.filter(m=>m.on)].map(m=>m.src);if(ph.length)S.photos=(rep?ph:S.photos.concat(ph)).slice(0,MAXP);
   closeReview();fieldsUI();listsUI();phUI();render();
   if(S.lang!=="orig"&&SM)doTranslate();
 }
@@ -381,7 +423,7 @@ async function doTranslate(){
 }
 
 /* ===== รูปสินค้า (สูงสุด 3) / รูปตำหนิ (หลายรูป) ===== */
-const MAXP=3,MAXD=6,PHK=["rej","defect"];
+const MAXP=3,MAXD=6,PHK=["phys","store","recv","rej","defect"];
 const readImgP=(f,max)=>new Promise(res=>readImg(f,max,res));
 function phUI(){
   $("phList").innerHTML=S.photos.map((p,i)=>`<label style="margin:0;position:relative"><img src="${p}" style="width:84px;height:68px;object-fit:cover;border:1px solid var(--brd);border-radius:6px"><button class="btn x" data-phx="${i}" style="position:absolute;top:2px;right:2px;background:#fff;padding:0 5px">✕</button></label>`).join("");
@@ -396,7 +438,7 @@ let DPT=null;
 $("dpFile").onchange=async e=>{const fs=[...e.target.files];e.target.value="";if(!DPT)return;const row=S[DPT.k][DPT.i];if(!row)return;
   const cur=row[2]||[];for(const f of fs.slice(0,Math.max(0,MAXD-cur.length)))cur.push(await readImgP(f,480));row[2]=cur;listsUI();render()};
 function listsUI(){
-  $("lists").innerHTML=LISTS.map(([k,t,a,b])=>`<div class="sec"><b>${t}</b>${(S[k]||[]).map((r,i)=>`<div class="row"><input type="text" value="${esc(r[0])}" placeholder="${a}" data-k="${k}" data-i="${i}" data-c="0" style="flex:2">${b?`<input type="text" value="${esc(r[1])}" placeholder="${b}" data-k="${k}" data-i="${i}" data-c="1" style="flex:1">`:""}${PHK.includes(k)?`<button class="btn" data-cam="${k}:${i}" title="แนบรูปตำหนิ (หลายรูป)">📷${(r[2]||[]).length?" "+r[2].length:""}</button>`:""}<button class="btn x" data-del="${k}" data-i="${i}">✕</button></div>${PHK.includes(k)&&(r[2]||[]).length?`<div class="imgs" style="margin:0 0 6px">${r[2].map((p,j)=>`<span style="position:relative"><img src="${p}" style="width:60px;height:48px"><button class="btn x" data-dpx="${k}:${i}:${j}" style="position:absolute;top:0;right:0;background:#fff;padding:0 4px">✕</button></span>`).join("")}</div>`:""}`).join("")}<button class="btn" data-add="${k}">+ เพิ่มแถว</button></div>`).join("");
+  $("lists").innerHTML=LISTS.map(([k,t,a,b])=>`<div class="sec"><b>${t}</b>${(S[k]||[]).map((r,i)=>`<div class="row"><input type="text" value="${esc(r[0])}" placeholder="${a}" data-k="${k}" data-i="${i}" data-c="0" style="flex:2">${b?`<input type="text" value="${esc(r[1])}" placeholder="${b}" data-k="${k}" data-i="${i}" data-c="1" style="flex:1">`:""}${PHK.includes(k)?`<button class="btn" data-cam="${k}:${i}" title="แนบรูปประกอบรายการ (หลายรูป)">📷${(r[2]||[]).length?" "+r[2].length:""}</button>`:""}<button class="btn x" data-del="${k}" data-i="${i}">✕</button></div>${PHK.includes(k)&&(r[2]||[]).length?`<div class="imgs" style="margin:0 0 6px">${r[2].map((p,j)=>`<span style="position:relative"><img src="${p}" style="width:60px;height:48px"><button class="btn x" data-dpx="${k}:${i}:${j}" style="position:absolute;top:0;right:0;background:#fff;padding:0 4px">✕</button></span>`).join("")}</div>`:""}`).join("")}<button class="btn" data-add="${k}">+ เพิ่มแถว</button></div>`).join("");
   const L=$("lists");
   L.querySelectorAll("input[data-k]").forEach(i=>i.oninput=()=>{S[i.dataset.k][+i.dataset.i][+i.dataset.c]=i.value;render()});
   L.querySelectorAll("[data-del]").forEach(x=>x.onclick=()=>{S[x.dataset.del].splice(+x.dataset.i,1);listsUI();render()});
@@ -509,7 +551,7 @@ async function exportPptx(){
     if(rj.length){sec(s,L.rej,y);y+=.4;s.addText(rj.map(r=>({text:r[0],options:{bullet:true,breakLine:true}})),{x:.6,y,w:12.1,h:rj.length*.3+.1,fontFace:F,fontSize:12,valign:"top",margin:0});y+=rj.length*.3+.2}
     if(df.length){s.addText(L.total,{x:.5,y,w:12.33,h:.3,fontFace:F,fontSize:12,bold:true,margin:0});y+=.35;tbl(s,df,y)}}
   // 4 รูปตำหนิ
-  if(dp){const items=[...V.rej,...V.defect].filter(r=>r[0]&&(r[2]||[]).length);
+  if(dp){const items=[...V.phys,...V.store,...V.recv,...V.rej,...V.defect].filter(r=>r[0]&&(r[2]||[]).length);
     for(let i=0;i<items.length;i+=3){s=P.addSlide();await addH(s,"INGREDIENT");let y=1.45;
       for(const r of items.slice(i,i+3)){s.addText(r[0]+(r[1]?"  –  "+r[1]:""),{x:.5,y,w:12.33,h:.34,fontFace:F,fontSize:14,bold:true,color:"C0392B",margin:0});
         let x=.5;for(const p of r[2].slice(0,6)){const d=await dims(p),h=1.55,w=h*d.w/d.h;s.addImage({data:p,x,y:y+.4,w,h});x+=w+.12}y+=2.05}}}
@@ -535,7 +577,7 @@ function openReview(){
   <div class="mdb"><div class="rvg"><div><div class="pvw" id="pvw"></div></div><div>
     <div class="rs" style="margin-top:0"><b>ไฟล์ที่จะส่ง (เลือกได้หลายไฟล์)</b>${FMTS.map(f=>`<label class="rr" style="margin:0 0 6px;cursor:pointer"><input type="checkbox" data-fmt="${f[0]}" ${f[0]==="pdf"?"checked":""}><span style="font-size:13px;color:var(--tx)"><b>${f[1]}</b> <span style="color:var(--tx2);font-size:11px">${f[2]}</span></span><span class="st" id="st-${f[0]}" style="margin-left:auto;font-size:11px;color:var(--tx2)"></span></label>`).join("")}</div>
     <div class="rs"><b>ชื่อไฟล์</b><input type="text" id="rvName" value="${esc(baseName())}"></div>
-    <div class="rs"><b>ตัวเลือกในเอกสาร</b><label class="rr" style="margin:0 0 4px"><input type="checkbox" id="rvPh" ${S.showPhotos!==false?"checked":""}><span style="font-size:13px;color:var(--tx)">รูปสินค้า (มุมขวา)</span></label><label class="rr" style="margin:0"><input type="checkbox" id="rvDp" ${S.dpOn!==false?"checked":""}><span style="font-size:13px;color:var(--tx)">รูปตำหนิ</span></label></div>
+    <div class="rs"><b>ตัวเลือกในเอกสาร</b><label class="rr" style="margin:0 0 4px"><input type="checkbox" id="rvPh" ${S.showPhotos!==false?"checked":""}><span style="font-size:13px;color:var(--tx)">รูปสินค้า (มุมขวา)</span></label><label class="rr" style="margin:0"><input type="checkbox" id="rvDp" ${S.dpOn!==false?"checked":""}><span style="font-size:13px;color:var(--tx)">รูปประกอบรายการ (ตำหนิ ฯลฯ)</span></label></div>
     <div class="note">ภาษาเอกสาร: ${esc({orig:"ต้นฉบับ",en:"English",th:"ไทย",zh:"中文",ja:"日本語"}[S.lang||"orig"])} · ${DL?"ระบบจะถามยืนยันการบันทึกทีละไฟล์":"ไฟล์จะถูกดาวน์โหลดทันที"}</div></div></div></div>
   <div class="mdf"><span class="note" id="rvMsg" style="margin:0 auto 0 0"></span><button class="btn" data-close>ยกเลิก</button><button class="btn p" id="rvGo">ส่ง / ดาวน์โหลดไฟล์ที่เลือก</button></div></div>`;
   document.body.appendChild(o);
@@ -592,7 +634,7 @@ async function saveToLib(){
   const id=S.recId||("r"+Date.now().toString(36)),photos={},cp=JSON.parse(JSON.stringify(S));
   S.photos.forEach((p,i)=>photos["p"+i]=p);cp.photos=[];
   const defects=[];
-  PHK.forEach(k=>cp[k].forEach((r,i)=>{(S[k][i][2]||[]).forEach((p,j)=>photos[k+"_"+i+"_"+j]=p);cp[k][i]=[r[0],r[1]];if(r[0])defects.push([r[0],(S[k][i][2]||[]).length,k,r[1]||"",i])}));
+  PHK.forEach(k=>cp[k].forEach((r,i)=>{(S[k][i][2]||[]).forEach((p,j)=>photos[k+"_"+i+"_"+j]=p);cp[k][i]=[r[0],r[1]];if(r[0]&&(k==="rej"||k==="defect"))defects.push([r[0],(S[k][i][2]||[]).length,k,r[1]||"",i])}));
   delete cp.recId;
   const meta={code:S.code||"",nameTh:S.nameTh||"",nameEn:S.nameEn||"",menu:S.menu||"",brands:S.brands.slice(),defects,photoCount:Object.keys(photos).length,updated:Date.now()};
   st.textContent="กำลังบันทึก…";
@@ -614,7 +656,7 @@ async function openLib(){
   $("libB").onclick=async ev=>{const t=ev.target.closest("button");if(!t)return;const d=t.dataset;
     if(d.open){const js=await Lib.json(d.open);if(!js)return;const ph=await Lib.photos(d.open),p=JSON.parse(js);
       S=Object.assign(blank(),p,{recId:d.open,photos:[]});
-      Object.keys(ph).sort().forEach(k=>{let m;if(/^p\d+$/.test(k))S.photos.push(ph[k]);else if((m=k.match(/^(rej|defect)_(\d+)_(\d+)$/))){const r=S[m[1]][+m[2]];if(r){r[2]=r[2]||[];r[2][+m[3]]=ph[k]}}});
+      Object.keys(ph).sort().forEach(k=>{let m;if(/^p\d+$/.test(k))S.photos.push(ph[k]);else if((m=k.match(/^(phys|store|recv|rej|defect)_(\d+)_(\d+)$/))){const r=S[m[1]][+m[2]];if(r){r[2]=r[2]||[];r[2][+m[3]]=ph[k]}}});
       S.photos=S.photos.filter(Boolean);PHK.forEach(k=>S[k].forEach(r=>{if(r[2])r[2]=r[2].filter(Boolean)}));
       closeOv("ov3");fieldsUI();listsUI();brandsUI();phUI();render();return}
     if(d.def){const box=t.closest(".li").querySelector(".ld");if(!box.hidden){box.hidden=true;return}
