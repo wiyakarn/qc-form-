@@ -32,7 +32,7 @@ textarea{resize:vertical;min-height:54px}
 .sheet{width:794px;max-width:100%;margin:0 auto;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);padding:28px 34px;position:relative}
 .hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:4px solid var(--acc,var(--grn));padding-bottom:10px;margin-bottom:12px}
 .hd .t1{font-size:11px;letter-spacing:.12em;color:var(--tx2)}
-.hd h2{font-size:26px;line-height:1.15;color:var(--acc,var(--grn))}
+.hd h2{font-size:26px;line-height:1.15;white-space:nowrap;color:var(--acc,var(--grn))}
 .hd .t3{font-size:13px;color:var(--tx2)}
 .hr{display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:52%}.eff{font-size:12px;font-weight:700;color:var(--acc,var(--grn));white-space:nowrap}
 .logos{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;max-width:100%}
@@ -208,7 +208,7 @@ function render(){
   const tbl=(k)=>(V[k]||[]).filter(r=>r[0]).length?`<table class="st">${V[k].filter(r=>r[0]).map(r=>`<tr><td>${esc(r[0])}${th(r)}</td><td>${esc(r[1])}</td></tr>`).join("")}</table>`:"";
   const sec=(t,h)=>h?`<div class="h">${t}</div>${h}`:"";
   const cau=(V.cautions||[]).filter(Boolean);
-  $("sheet").innerHTML=`<div class="hd"><div><div class="t1">PRODUCT</div><h2>INGREDIENT</h2><div class="t3">${esc(S.brands.join(" · "))}</div></div><div class="hr"><div class="logos">${logos}</div>${S.effDate?`<div class="eff">Effective Date: ${fmtDate(S.effDate)}</div>`:""}</div></div>
+  $("sheet").innerHTML=`<div class="hd"><div><h2>Product Ingredient</h2></div><div class="hr"><div class="logos">${logos}</div>${S.effDate?`<div class="eff">Effective Date: ${fmtDate(S.effDate)}</div>`:""}</div></div>
   ${V.menu?`<div class="t3" style="margin-bottom:4px">${esc(V.menu)}</div>`:""}
   <div class="pn"><div class="pt"><div class="c">${esc(S.code)}</div><div class="n">${esc(V.nameTh)}</div><div class="e">${esc(S.nameEn)}</div></div>${ph.length?`<div class="pp">${ph.map(p=>`<img src="${p}">`).join("")}</div>`:""}</div>
   <div class="mid"><div class="info desc">${esc(V.desc)}</div></div>
@@ -450,7 +450,7 @@ async function exportDocx(){
   const tbl=(rows,cw)=>new D.Table({width:{size:W,type:D.WidthType.DXA},columnWidths:cw,rows});
   const kids=[];
   const logoRuns=[];for(const b of S.brands){const l=logoOf(b);if(l)logoRuns.push(await imgRun(l,56),gap());else logoRuns.push(run(b,{bold:true,color:GREEN,size:26}),gap())}
-  kids.push(tbl([new D.TableRow({children:[cell([para("PRODUCT",{size:18,color:"6B6860"}),para("INGREDIENT",{size:52,bold:true,color:GREEN,after:0}),para(S.brands.join(" · "),{size:20,color:"6B6860"})],6200),cell([para(logoRuns,{align:D.AlignmentType.RIGHT}),...(S.effDate?[para("Effective Date: "+fmtDate(S.effDate),{align:D.AlignmentType.RIGHT,bold:true,color:GREEN,size:20})]:[])],W-6200)]})],[6200,W-6200]));
+  kids.push(tbl([new D.TableRow({children:[cell([para("Product Ingredient",{size:48,bold:true,color:GREEN,after:0})],6200),cell([para(logoRuns,{align:D.AlignmentType.RIGHT}),...(S.effDate?[para("Effective Date: "+fmtDate(S.effDate),{align:D.AlignmentType.RIGHT,bold:true,color:GREEN,size:20})]:[])],W-6200)]})],[6200,W-6200]));
   kids.push(new D.Paragraph({border:{bottom:{style:D.BorderStyle.SINGLE,size:24,color:GREEN,space:1}},spacing:{after:120},children:[]}));
   if(V.menu)kids.push(para(V.menu,{color:"6B6860"}));
   const pl=[para(S.code,{size:18,color:"6B6860"}),para(V.nameTh,{size:34,bold:true}),para(S.nameEn,{size:18,color:"6B6860",after:0})];
@@ -475,7 +475,7 @@ async function exportPptx(){
   await lib("pptx");const{V,L,photos,dp,th}=ctx(),P=new window.PptxGenJS(),GREEN=th.acc.slice(1).toUpperCase(),TINT=tint(th.acc,.12).slice(1).toUpperCase(),F="Tahoma",DK=th.dk.slice(1).toUpperCase(),RED=th.acc2.slice(1).toUpperCase();P.layout="LAYOUT_WIDE";P.title="Product Ingredient";
   const addH=async(s,title)=>{
     s.addShape(P.ShapeType.rect,{x:0,y:0,w:13.33,h:.16,fill:{color:GREEN},line:{color:GREEN}});
-    s.addText([{text:"PRODUCT",options:{fontSize:10,color:"6B6860",breakLine:true}},{text:title,options:{fontSize:26,bold:true,color:GREEN}}],{x:.5,y:.3,w:7.6,h:.95,fontFace:F,valign:"top",margin:0});
+    s.addText("Product Ingredient",{x:.5,y:.3,w:7.6,h:.7,fontFace:F,fontSize:28,bold:true,color:GREEN,valign:"middle",margin:0,fit:"shrink"});
     let x=12.83;
     for(const b of S.brands.slice().reverse()){const l=logoOf(b);if(l){const d=await dims(l),h=.7,w=h*d.w/d.h;x-=w;s.addImage({data:l,x,y:.3,w,h});x-=.15}else{const w=Math.max(.7,.14*b.length+.3);x-=w;s.addText(b,{x,y:.35,w,h:.5,align:"center",valign:"middle",bold:true,color:GREEN,fontFace:F,fontSize:14,line:{color:GREEN,width:1.5}});x-=.15}}
     if(S.effDate)s.addText("Effective Date: "+fmtDate(S.effDate),{x:8.33,y:1.0,w:4.5,h:.25,align:"right",fontFace:F,fontSize:11,bold:true,color:GREEN,margin:0});
