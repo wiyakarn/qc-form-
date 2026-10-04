@@ -30,9 +30,9 @@ textarea{resize:vertical;min-height:54px}
 .inl label{display:flex;gap:4px;align-items:center;margin:0;font-size:13px;color:var(--tx)}
 .stage{padding:20px;overflow:auto}
 .sheet{width:794px;max-width:100%;margin:0 auto;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);padding:28px 34px;position:relative}
-.hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:4px solid var(--acc,var(--grn));padding-bottom:10px;margin-bottom:12px}
+.hd{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px 16px;border-bottom:4px solid var(--acc,var(--grn));padding-bottom:10px;margin-bottom:12px}
 .hd .t1{font-size:11px;letter-spacing:.12em;color:var(--tx2)}
-.hd h2{font-size:26px;line-height:1.15;white-space:nowrap;color:var(--acc,var(--grn))}
+.hd h2{font-size:38px;line-height:1.1;letter-spacing:-.01em;white-space:nowrap;color:var(--acc,var(--grn))}
 .hd .t3{font-size:13px;color:var(--tx2)}
 .hr{display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:52%}.eff{font-size:12px;font-weight:700;color:var(--acc,var(--grn));white-space:nowrap}
 .logos{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;max-width:100%}
@@ -72,7 +72,8 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
 .rvg{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(220px,1fr);gap:16px}.pvw{border:1px solid var(--brd);border-radius:6px;overflow:hidden;background:#fff;position:relative}
 .lb{border:1px solid var(--brd);border-radius:8px;margin-top:8px;padding:6px 10px}.lb summary{cursor:pointer;padding:2px 0}.lm{font-size:12px;font-weight:700;color:var(--grn);margin:8px 0 2px}.li{border-top:1px solid var(--brd);padding:6px 0}.ldr{padding:3px 0 2px 10px;font-size:12px}
 @media(max-width:700px){.rvg{grid-template-columns:minmax(0,1fr)}}.rvg>div{min-width:0}
-@media(max-width:900px){.app{grid-template-columns:1fr}.panel{height:auto;position:static}.sheet{padding:16px}}
+@media(max-width:900px){.hd h2{font-size:28px}.hr{max-width:100%;align-items:flex-start}.logos{justify-content:flex-start}.sheet.x794 .hr{max-width:52%;align-items:flex-end}.sheet.x794 .logos{justify-content:flex-end}.app{grid-template-columns:1fr}.panel{height:auto;position:static}.sheet{padding:16px}}
+.sheet.x794{padding:28px 34px}.sheet.x794 .hd h2{font-size:38px}
 @media print{body{background:#fff}.panel{display:none}.app{display:block}.stage{padding:0}.sheet{box-shadow:none;width:100%;padding:0}@page{size:A4;margin:12mm}}
 </style>
 </head>
@@ -419,7 +420,7 @@ async function saveBlob(name,blob){
 }
 async function snap(){
   await lib("html2canvas");
-  const c=$("sheet").cloneNode(true);c.removeAttribute("id");c.style.cssText+=";position:fixed;left:-10000px;top:0;width:794px;max-width:none;box-shadow:none;margin:0";document.body.appendChild(c);
+  const c=$("sheet").cloneNode(true);c.removeAttribute("id");c.classList.add("x794");c.style.cssText+=";position:fixed;left:-10000px;top:0;width:794px;max-width:none;box-shadow:none;margin:0";document.body.appendChild(c);
   try{await new Promise(r=>setTimeout(r,80));
     const top=c.getBoundingClientRect().top,units=[...c.querySelectorAll(".hd,.pn,.mid,.h,.kp,li,tr,.warn,.ft")].filter(u=>!u.closest(".warn")||u.classList.contains("warn")),marks=[];
     units.forEach((u,i)=>{const pv=units[i-1];if(i&&!(pv&&(pv.classList.contains("h")||pv.classList.contains("kp"))))marks.push(Math.round((u.getBoundingClientRect().top-top)*2))});
@@ -451,7 +452,7 @@ async function exportDocx(){
   const tbl=(rows,cw)=>new D.Table({width:{size:W,type:D.WidthType.DXA},columnWidths:cw,rows});
   const kids=[];
   const logoRuns=[];for(const b of S.brands){const l=logoOf(b);if(l)logoRuns.push(await imgRun(l,56),gap());else logoRuns.push(run(b,{bold:true,color:GREEN,size:26}),gap())}
-  kids.push(tbl([new D.TableRow({children:[cell([para("Product Ingredient",{size:48,bold:true,color:GREEN,after:0})],6200),cell([para(logoRuns,{align:D.AlignmentType.RIGHT}),...(S.effDate?[para("Effective Date: "+fmtDate(S.effDate),{align:D.AlignmentType.RIGHT,bold:true,color:GREEN,size:20})]:[])],W-6200)]})],[6200,W-6200]));
+  kids.push(tbl([new D.TableRow({children:[cell([para("Product Ingredient",{size:64,bold:true,color:GREEN,after:0})],6200),cell([para(logoRuns,{align:D.AlignmentType.RIGHT}),...(S.effDate?[para("Effective Date: "+fmtDate(S.effDate),{align:D.AlignmentType.RIGHT,bold:true,color:GREEN,size:20})]:[])],W-6200)]})],[6200,W-6200]));
   kids.push(new D.Paragraph({border:{bottom:{style:D.BorderStyle.SINGLE,size:24,color:GREEN,space:1}},spacing:{after:120},children:[]}));
   if(V.menu)kids.push(para(V.menu,{color:"6B6860"}));
   const pl=[para(S.code,{size:18,color:"6B6860"}),para(V.nameTh,{size:34,bold:true}),para(S.nameEn,{size:18,color:"6B6860",after:0})];
@@ -476,7 +477,7 @@ async function exportPptx(){
   await lib("pptx");const{V,L,photos,dp,th}=ctx(),P=new window.PptxGenJS(),GREEN=th.acc.slice(1).toUpperCase(),TINT=tint(th.acc,.12).slice(1).toUpperCase(),F="Tahoma",DK=th.dk.slice(1).toUpperCase(),RED=th.acc2.slice(1).toUpperCase();P.layout="LAYOUT_WIDE";P.title="Product Ingredient";
   const addH=async(s,title)=>{
     s.addShape(P.ShapeType.rect,{x:0,y:0,w:13.33,h:.16,fill:{color:GREEN},line:{color:GREEN}});
-    s.addText("Product Ingredient",{x:.5,y:.3,w:7.6,h:.7,fontFace:F,fontSize:28,bold:true,color:GREEN,valign:"middle",margin:0,fit:"shrink"});
+    s.addText("Product Ingredient",{x:.5,y:.3,w:7.6,h:.7,fontFace:F,fontSize:36,bold:true,color:GREEN,valign:"middle",margin:0,fit:"shrink"});
     let x=12.83;
     for(const b of S.brands.slice().reverse()){const l=logoOf(b);if(l){const d=await dims(l),h=.7,w=h*d.w/d.h;x-=w;s.addImage({data:l,x,y:.3,w,h});x-=.15}else{const w=Math.max(.7,.14*b.length+.3);x-=w;s.addText(b,{x,y:.35,w,h:.5,align:"center",valign:"middle",bold:true,color:GREEN,fontFace:F,fontSize:14,line:{color:GREEN,width:1.5}});x-=.15}}
     if(S.effDate)s.addText("Effective Date: "+fmtDate(S.effDate),{x:8.33,y:1.0,w:4.5,h:.25,align:"right",fontFace:F,fontSize:11,bold:true,color:GREEN,margin:0});
@@ -536,7 +537,7 @@ function openReview(){
     <div class="note">ภาษาเอกสาร: ${esc({orig:"ต้นฉบับ",en:"English",th:"ไทย",zh:"中文",ja:"日本語"}[S.lang||"orig"])} · ${DL?"ระบบจะถามยืนยันการบันทึกทีละไฟล์":"ไฟล์จะถูกดาวน์โหลดทันที"}</div></div></div></div>
   <div class="mdf"><span class="note" id="rvMsg" style="margin:0 auto 0 0"></span><button class="btn" data-close>ยกเลิก</button><button class="btn p" id="rvGo">ส่ง / ดาวน์โหลดไฟล์ที่เลือก</button></div></div>`;
   document.body.appendChild(o);
-  const pv=()=>{const box=$("pvw");box.innerHTML="";const c=$("sheet").cloneNode(true);c.removeAttribute("id");c.style.cssText+=";width:794px;max-width:none;margin:0;box-shadow:none;transform-origin:top left";box.appendChild(c);const sc=Math.min(1,box.clientWidth/794);c.style.transform="scale("+sc+")";box.style.height=Math.ceil(c.offsetHeight*sc)+"px"};
+  const pv=()=>{const box=$("pvw");box.innerHTML="";const c=$("sheet").cloneNode(true);c.removeAttribute("id");c.classList.add("x794");c.style.cssText+=";width:794px;max-width:none;margin:0;box-shadow:none;transform-origin:top left";box.appendChild(c);const sc=Math.min(1,box.clientWidth/794);c.style.transform="scale("+sc+")";box.style.height=Math.ceil(c.offsetHeight*sc)+"px"};
   pv();
   const cnt=()=>{const n=o.querySelectorAll("[data-fmt]:checked").length;$("rvGo").textContent=n?`ส่ง / ดาวน์โหลด ${n} ไฟล์`:"เลือกไฟล์ก่อน";$("rvGo").disabled=!n};cnt();
   o.querySelectorAll("[data-fmt]").forEach(x=>x.onchange=cnt);
