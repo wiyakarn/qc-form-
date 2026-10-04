@@ -68,6 +68,11 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
 .imgs{display:flex;gap:8px;flex-wrap:wrap}.imgs label{margin:0;position:relative;cursor:pointer}.imgs img{width:90px;height:72px;object-fit:cover;border:2px solid var(--brd);border-radius:6px}.imgs input:checked+img{border-color:var(--grn)}
 .imgs input{position:absolute;top:4px;left:4px}
 .rthumbs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px 24px}.rthumbs .t{position:relative}.rthumbs img{width:64px;height:52px;object-fit:cover;border:2px solid var(--brd);border-radius:5px;display:block}.rthumbs input:checked+img{border-color:var(--grn)}.rthumbs input{position:absolute;top:3px;left:3px;z-index:1}.rthumbs .x{position:absolute;top:0;right:0;background:#fff;padding:0 4px;line-height:1.3}
+.btn.gb{background:#fff;border-color:var(--grn);color:var(--grn);font-weight:700}
+.gbn{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fef8ec;border:1px solid #e6c36a;border-radius:8px;padding:6px 10px;margin:0 0 10px;font-size:12.5px}.gbn span{flex:1;min-width:150px}.gbn[hidden]{display:none}
+.gd{border:1px solid var(--brd);border-radius:8px;margin:8px 0;padding:0 12px;background:#fff}.gd>summary{cursor:pointer;padding:9px 0;font-weight:700;font-size:13.5px;color:var(--grn)}.gd>summary:focus-visible{outline:2px solid var(--grn);outline-offset:2px}.gd[open]>summary{border-bottom:1px solid var(--brd);margin-bottom:8px}
+.gd ol,.gd ul{padding-left:20px;margin:0 0 8px}.gd li{margin:3px 0;font-size:13px}.gd p{font-size:13px;margin:0 0 8px}.gd table{width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 10px}.gd td,.gd th{border:1px solid var(--brd);padding:4px 8px;text-align:left;vertical-align:top}.gd th{background:#f1f0ea}
+.gq{background:var(--grn2);border-left:5px solid var(--grn);border-radius:6px;padding:10px 14px;margin:6px 0 4px}.gq ol{padding-left:20px;margin:4px 0 0}.gq li{margin:3px 0;font-size:13.5px}
 .stale{display:inline-block;background:#fef8ec;border:1px solid #e6c36a;border-radius:10px;padding:0 8px;font-size:11px;margin-left:6px}
 .pn{display:flex;gap:16px;align-items:center;justify-content:space-between}.pn .pt{flex:1;min-width:0}.pn .pp{display:flex;gap:6px;flex-shrink:0}.pn .pp img{width:128px;height:104px;object-fit:cover;border-radius:4px;border:1px solid #cfe3d7;background:#fff}
 .dp{display:flex;gap:4px;flex-wrap:wrap;margin:2px 0 4px 10px}.dp img{width:56px;height:46px;object-fit:cover;border:1px solid var(--brd);border-radius:3px}
@@ -83,7 +88,8 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
 <div class="app">
 <div class="panel">
   <h1>📋 Product Ingredient</h1>
-  <div class="bar" style="margin:0 0 10px"><button class="btn p" onclick="newItem()">＋ สินค้าใหม่</button><button class="btn" onclick="openLib()">📚 รายการที่บันทึกไว้</button></div>
+  <div class="bar" style="margin:0 0 8px"><button class="btn p" onclick="newItem()">＋ สินค้าใหม่</button><button class="btn" onclick="openLib()">📚 รายการที่บันทึกไว้</button><button class="btn gb" onclick="openGuide()">📖 คู่มือการใช้งาน</button></div>
+  <div class="gbn" id="gdBanner" hidden><span>ใช้งานครั้งแรก? อ่านคู่มือสั้นๆ ก่อนเริ่ม</span><button class="btn p" onclick="openGuide()">เปิดคู่มือ</button><button class="btn x" onclick="hideGuideBanner()" aria-label="ปิดข้อความนี้">✕</button></div>
   <div class="sec"><b>แบรนด์ (เลือกได้หลายแบรนด์)</b>
     <div class="brands" id="brands"></div>
     <div class="row" style="margin-top:6px"><input type="text" id="newBrand" placeholder="ชื่อแบรนด์ใหม่"><button class="btn" onclick="addBrand()">+ เพิ่ม</button></div>
@@ -744,6 +750,74 @@ function showLM(){
   o.querySelector("[data-ok]").onclick=()=>{let n=0;
     LM.forEach(m=>{const name=(m.nw.trim()||m.brand);if(!name)return;if(!S.brands.includes(name))S.brands.push(name);setLogo(name,m.src);n++});
     LM=null;closeOv("ov4");brandsUI();render();$("libSt").textContent=n?"จำโลโก้ "+n+" แบรนด์แล้ว จะขึ้นอัตโนมัติทุกครั้ง":"ยังไม่ได้เลือกแบรนด์ให้โลโก้"};
+}
+
+/* ===== คู่มือการใช้งานในแอป ===== */
+const GKEY="pi.guide.seen";
+function guideSeen(){try{return localStorage.getItem(GKEY)==="1"}catch(e){return false}}
+function hideGuideBanner(){const b=$("gdBanner");if(b)b.hidden=true;try{localStorage.setItem(GKEY,"1")}catch(e){}}
+if(!guideSeen())$("gdBanner").hidden=false;
+function openGuide(){
+  hideGuideBanner();closeOv("ov5");const o=document.createElement("div");o.id="ov5";o.className="ov";
+  o.innerHTML=`<div class="md" role="dialog" aria-modal="true" aria-label="คู่มือการใช้งาน" style="max-width:780px"><div class="mdh"><b>📖 คู่มือการใช้งาน Product Ingredient</b><button class="btn" data-close>ปิด</button></div><div class="mdb">
+  <div class="gq"><b>เริ่มใช้งานใน 5 ขั้นตอน</b><ol>
+   <li>กด <b>“＋ สินค้าใหม่”</b> ที่ด้านบนของแถบซ้าย</li>
+   <li>ติ๊กแบรนด์ (โลโก้และสีเอกสารขึ้นเอง) และใส่ <b>Effective Date</b></li>
+   <li>กรอกข้อมูลสินค้า หรือกด <b>“📎 แนบสเปค”</b> แล้วติ๊กเลือกข้อมูลที่ต้องการนำเข้า</li>
+   <li>เพิ่มรูปสินค้า (ไม่เกิน 3 รูป) และกด 📷 ที่รายการเพื่อแนบรูปตำหนิ</li>
+   <li>กด <b>“👁 รีวิวก่อนส่ง”</b> เลือก PDF / Word / PowerPoint / รูปภาพ แล้วส่ง และกด <b>“💾 บันทึกเข้าคลัง”</b> เพื่อเก็บไว้ใช้ภายหลัง</li></ol></div>
+  <details class="gd"><summary>1. เริ่มสินค้าใหม่และกรอกข้อมูล</summary>
+   <ol><li><b>Effective Date</b> เลือกจากปฏิทินหรือกด “วันนี้” แสดงใต้โลโก้มุมขวาบน (รูปแบบ วัน/เดือน/ปี ค.ศ.)</li>
+   <li><b>รหัสสินค้า</b> และ <b>ชื่อสินค้า</b> ภาษาไทยและ English</li>
+   <li><b>ชื่อเมนู / กลุ่ม</b> คือ “หัวข้อ” ที่ใช้จัดสินค้าในคลังข้อมูล</li>
+   <li><b>คำอธิบาย</b> สารก่อภูมิแพ้ และฮาลาล (YES / NO พร้อมเลขที่ใบรับรอง)</li>
+   <li>รายการ 5 กล่อง: มาตรฐานทางกายภาพ, อายุการจัดเก็บ, จุดรับสินค้า, ตำหนิที่ไม่ยอมรับ, ตำหนิที่ยอมรับได้ กด “+ เพิ่มแถว” เพื่อเพิ่ม และ ✕ เพื่อลบ</li>
+   <li><b>ข้อควรระวัง</b> พิมพ์หนึ่งข้อต่อหนึ่งบรรทัด</li></ol>
+   <p>ในช่องค่าให้พิมพ์ตัวเลขตามด้วยหน่วย เช่น <code>1000 กรัมต่อถุง</code> ระบบแยกตัวเลขกับหน่วยเข้าตาราง 3 คอลัมน์ (รายการ / ค่า / หน่วย) ให้เอง ปุ่ม “ตัวอย่าง: กุ้ง / สตริงชีส” ใช้ดูรูปแบบก่อนกรอกจริง ข้อมูลที่กรอกจะถูกจำไว้ในเบราว์เซอร์เครื่องนี้โดยอัตโนมัติ</p></details>
+  <details class="gd"><summary>2. เลือกแบรนด์ โลโก้ และสีเอกสาร</summary>
+   <ul><li>ติ๊กแบรนด์ได้หลายแบรนด์พร้อมกัน โลโก้ขึ้นมุมขวาบนของเอกสารอัตโนมัติ</li>
+   <li>โลโก้ที่ยังไม่มี: เลือกแบรนด์แล้วกด “อัปโหลดโลโก้” หรือกด “อัปโหลดหลายโลโก้พร้อมกัน” ระบบตัดขอบขาวและเดาแบรนด์จากชื่อไฟล์ให้ โลโก้ที่อัปโหลดจะถูกจำไว้</li>
+   <li>ชิปที่ไม่มีโลโก้จะแสดงเป็นชื่อแบรนด์ในกรอบ</li>
+   <li><b>สีเอกสาร</b> ระบบดึงอย่างน้อย 3 สีจากโลโก้ (สีหลัก สีรอง สีเข้ม) ใช้กับหัวเอกสาร เส้น และแถบล่าง เลือกแบรนด์ที่จะใช้เป็นธีมได้ ปรับสีเองได้ หรือกดสีจากแถบ “สีที่พบในโลโก้” และกด “ดึงสีจากโลโก้ใหม่” เพื่อกลับค่าเดิม</li></ul></details>
+  <details class="gd"><summary>3. แนบสเปคและเลือกข้อมูลก่อนนำเข้า</summary>
+   <ol><li>กด “📎 แนบสเปค” แล้วเลือกไฟล์ Word (.docx), PDF หรือ .txt หรือกด “วางข้อความ”</li>
+   <li>หน้าต่าง “ตรวจและเลือกข้อมูลที่จะนำเข้า” แสดงข้อมูลที่พบแยกตามหมวด ติ๊กเลือกทีละรายการ แก้ข้อความได้ ✕ เพื่อลบ “+ เพิ่มเอง” เพื่อเพิ่ม และปุ่ม “ทั้งหมด / ล้าง” ช่วยเลือกทั้งหมวด</li>
+   <li>ไฟล์ที่มีหลายสินค้า ให้เลือกสินค้าจากรายการด้านบน</li>
+   <li>รูปในไฟล์ Word จะถูกจัดตามหัวข้อ: รูปใกล้ชื่อสินค้าเป็นรูปสินค้า (ไม่เกิน 3 รูป) รูปใต้รายการไหนอยู่กับรายการนั้น ตรวจแล้วติ๊กออกเพื่อไม่ใช้ กด ✕ เพื่อลบ กด 📷 หรือ “＋ เพิ่มรูป” เพื่อเพิ่มเอง</li>
+   <li>เลือก “แทนที่ส่วนที่เลือก” หรือ “เพิ่มต่อท้าย” แล้วกด <b>“นำเข้าฟอร์ม”</b></li></ol>
+   <p>ระบบจับสินค้าจากบรรทัดที่ขึ้นต้นด้วยรหัสตัวเลขยาว 5 หลักขึ้นไปตามด้วยชื่อสินค้า ช่องติ๊กฮาลาล YES/NO ในไฟล์ Word อ่านไม่ได้ ต้องเลือกเองในฟอร์ม ไฟล์ PDF ดึงรูปไม่ได้</p></details>
+  <details class="gd"><summary>4. รูปสินค้าและรูปประกอบรายการ</summary>
+   <ul><li><b>รูปสินค้า</b> แนบได้สูงสุด 3 รูป แสดงทางขวาของกรอบชื่อสินค้า ติ๊ก “ใส่รูปสินค้าในเอกสาร” เพื่อเลือกว่าจะใส่หรือไม่ รูปไม่หาย</li>
+   <li><b>รูปประกอบรายการ / ตำหนิ</b> กด 📷 ที่แถวไหนก็ได้ ใน 5 กล่อง แนบได้หลายรูป (สูงสุด 6 รูปต่อรายการ) รูปแสดงใต้รายการนั้นในเอกสาร ติ๊ก “ใส่รูปประกอบรายการ” เพื่อซ่อนหรือแสดงทั้งหมด</li></ul></details>
+  <details class="gd"><summary>5. แปลภาษาอัตโนมัติ</summary>
+   <ol><li>เลือกภาษาในกล่อง “ภาษา / แปลอัตโนมัติ”: English, ไทย, 中文 หรือ 日本語</li>
+   <li>กด “🌐 แปลอัตโนมัติ” เอกสารและหัวข้อจะเปลี่ยนเป็นภาษานั้น เลือก “ต้นฉบับ” เพื่อกลับ</li>
+   <li>ถ้าแก้ข้อมูลต้นฉบับหลังแปล ให้กดแปลใหม่</li></ol>
+   <p>การแปลใช้ได้เมื่อเปิดผ่านลิงก์ Claude ควรให้คนที่อ่านภาษานั้นได้ตรวจก่อนใช้งานจริง</p></details>
+  <details class="gd"><summary>6. รีวิวก่อนส่งและดาวน์โหลดไฟล์</summary>
+   <ul><li>ดาวน์โหลดทันที: กด ⬇ PDF / Word / PowerPoint / รูปภาพ ในกล่อง “ดาวน์โหลด / ส่ง”</li>
+   <li>กด <b>“👁 รีวิวก่อนส่ง”</b> เพื่อดูตัวอย่างทั้งหน้า ติ๊กหลายไฟล์ ตั้งชื่อไฟล์ และเปิด/ปิดรูปสินค้า รูปประกอบรายการ แล้วกดส่ง</li>
+   <li>ชื่อไฟล์คือ <code>แบรนด์_รหัส_ชื่อสินค้า</code> เช่น <code>TPC_1000062012_กุ้งขาวต้ม 31-40.pdf</code> หลายแบรนด์คั่นด้วย -</li>
+   <li>PDF ขนาด A4 ไม่ตัดรายการกลางแถว เป็นภาพ คัดลอกข้อความไม่ได้ ถ้าต้องการแก้ต่อให้ใช้ Word PowerPoint มีสไลด์แยกตามหัวข้อ</li>
+   <li>เมื่อเปิดผ่านลิงก์ Claude ระบบถามยืนยันการบันทึกทีละไฟล์ ไฟล์อยู่ในโฟลเดอร์ Downloads ของเครื่อง</li></ul></details>
+  <details class="gd"><summary>7. คลังข้อมูล (แบรนด์ → หัวข้อ → สินค้า → ตำหนิ)</summary>
+   <ol><li>ติ๊กแบรนด์อย่างน้อย 1 แบรนด์ ใส่รหัสหรือชื่อสินค้า แล้วกด “💾 บันทึกเข้าคลัง”</li>
+   <li>กด “📚 รายการที่บันทึกไว้” เพื่อค้นหา “เปิด” กลับมาแก้ไข ดูตำหนิพร้อมรูปด้วย “ตำหนิ ▾” หรือ “ลบ” (กดสองครั้งเพื่อยืนยัน)</li>
+   <li>เปิดสินค้าจากคลังแล้วบันทึกซ้ำ = อัปเดตรายการเดิม ถ้าจะเก็บเป็นสินค้าใหม่ให้กด “＋ สินค้าใหม่” ก่อน</li></ol>
+   <p>บนลิงก์ Claude คลังใช้ร่วมกันได้ตามสิทธิ์ของลิงก์ การบันทึกต้องมีสิทธิ์แก้ไข ส่วนไฟล์ HTML ในรีโปเก็บในเบราว์เซอร์เครื่องนั้นเท่านั้น</p></details>
+  <details class="gd"><summary>8. ปัญหาที่พบบ่อย</summary>
+   <table><tr><th>อาการ</th><th>สาเหตุ / วิธีแก้</th></tr>
+   <tr><td>แนบสเปคไม่ได้</td><td>ไฟล์ .doc รุ่นเก่า ให้บันทึกเป็น .docx PDF ที่เป็นภาพสแกนอ่านไม่ได้ หรือกด “วางข้อความ”</td></tr>
+   <tr><td>นำเข้าแล้วไม่พบสินค้า</td><td>บรรทัดสินค้าต้องขึ้นต้นด้วยรหัสตัวเลข 5 หลักขึ้นไป แก้ข้อความในหน้าต่างแล้วกด “ลองอีกครั้ง”</td></tr>
+   <tr><td>ปุ่มแปลกดไม่ได้</td><td>ต้องเปิดผ่านลิงก์ Claude</td></tr>
+   <tr><td>บันทึกเข้าคลังไม่สำเร็จ</td><td>ไม่มีสิทธิ์แก้ไขลิงก์ ขอสิทธิ์จากเจ้าของลิงก์</td></tr>
+   <tr><td>ดาวน์โหลดไม่ขึ้น</td><td>ยังไม่ได้กดยืนยันในหน้าต่างบันทึก หรือกดยกเลิก ลองส่งใหม่</td></tr>
+   <tr><td>โลโก้ไม่ขึ้น</td><td>MSCS, MG, SGB ยังไม่มีโลโก้ ใช้ “อัปโหลดโลโก้” ครั้งเดียว</td></tr>
+   <tr><td>ข้อมูลหายจากฟอร์ม</td><td>ล้างข้อมูลเบราว์เซอร์หรือเปลี่ยนเครื่อง บันทึกเข้าคลังทุกครั้งหลังแก้ไข</td></tr></table></details>
+  </div><div class="mdf"><button class="btn p" data-close>เข้าใจแล้ว</button></div></div>`;
+  document.body.appendChild(o);
+  o.querySelectorAll("[data-close]").forEach(x=>x.onclick=()=>closeOv("ov5"));
+  o.addEventListener("click",e=>{if(e.target===o)closeOv("ov5")});
 }
 
 fieldsUI();listsUI();brandsUI();phUI();render();
