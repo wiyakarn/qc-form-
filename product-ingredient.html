@@ -34,7 +34,8 @@ textarea{resize:vertical;min-height:54px}
 .hd .t1{font-size:11px;letter-spacing:.12em;color:var(--tx2)}
 .hd h2{font-size:26px;line-height:1.15;color:var(--acc,var(--grn))}
 .hd .t3{font-size:13px;color:var(--tx2)}
-.logos{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;max-width:50%}
+.hr{display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:52%}.eff{font-size:12px;font-weight:700;color:var(--acc,var(--grn));white-space:nowrap}
+.logos{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;max-width:100%}
 .logos img{height:70px;max-width:110px;object-fit:contain}
 .logos .lt{height:50px;min-width:60px;padding:0 10px;border:2px solid var(--acc,var(--grn));border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--acc,var(--grn))}
 .pn{background:var(--acct,var(--grn2));border-left:5px solid var(--acc,var(--grn));padding:8px 12px;margin-bottom:10px}
@@ -103,6 +104,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
     <div class="note" id="trSt"></div>
   </div>
   <div class="sec"><b>ข้อมูลสินค้า</b>
+    <label>Effective Date <span style="float:right;cursor:pointer;color:var(--grn)" onclick="$('effDate').value=todayISO();S.effDate=todayISO();render()">วันนี้</span></label><input type="date" id="effDate">
     <label>รหัสสินค้า</label><input type="text" id="code">
     <label>ชื่อสินค้า (ไทย)</label><input type="text" id="nameTh">
     <label>ชื่อสินค้า (English)</label><input type="text" id="nameEn">
@@ -167,7 +169,9 @@ defect:[],
 cautions:[CAUT[0],CAUT[1]+"หลังการอบ",CAUT[2],"การพับขอบพิซซ่า ควรพับขอบให้แน่น โดยให้สินค้าแนบสนิทกับแป้งและหลีกเลี่ยงการเกิดช่องว่างภายในขอบ เพื่อช่วยลดการไหลและการยุบตัวของสินค้าระหว่างการอบ"]}};
 const KEY="productIngredient.v1";
 let S,TRBUSY=false;
-const blank=()=>({brands:["TPC"],customBrands:[],logos:{},code:"",nameTh:"",nameEn:"",menu:"",desc:"",allergen:"",halal:"NO",halalNo:"",photos:[],lang:"orig",tr:{},phys:[],store:[],recv:[],rej:[],defect:[],cautions:[]});
+const fmtDate=s=>{const m=String(s||"").match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[3]+"/"+m[2]+"/"+m[1]:String(s||"")};
+const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const blank=()=>({brands:["TPC"],customBrands:[],logos:{},code:"",nameTh:"",nameEn:"",menu:"",desc:"",allergen:"",halal:"NO",halalNo:"",photos:[],effDate:todayISO(),lang:"orig",tr:{},phys:[],store:[],recv:[],rej:[],defect:[],cautions:[]});
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.brands)S=Object.assign(blank(),{...P.shrimp,cautions:CAUT.slice()});
 S.lang=S.lang||"orig";S.tr=S.tr||{};S.theme=S.theme||{};
@@ -182,7 +186,7 @@ function brandsUI(){
 }
 function fieldsUI(){
   ["code","nameTh","nameEn","menu","desc","allergen","halalNo"].forEach(k=>$(k).value=S[k]||"");
-  $("cautions").value=(S.cautions||[]).join("\n");
+  $("cautions").value=(S.cautions||[]).join("\n");$("effDate").value=S.effDate||"";
   document.querySelectorAll("[name=halal]").forEach(r=>r.checked=r.value===S.halal);
 }
 const LB={th:{look:"ลักษณะสินค้า",allergen:"สารที่ก่อให้เกิดอาการแพ้ (Food Allergen)",halal:"ฮาลาล (Halal certification number)",phys:"มาตรฐานทางกายภาพ",store:"อุณหภูมิและอายุการจัดเก็บ",recv:"ลักษณะสินค้า ณ จุดรับ",rej:"ตำหนิและ % ที่ยอมรับ",total:"ตำหนิที่ยอมรับได้โดยรวม (Total Defects)",caut:"ข้อควรระวัง:"},
@@ -202,7 +206,7 @@ function render(){
   const tbl=(k)=>(V[k]||[]).filter(r=>r[0]).length?`<table class="st">${V[k].filter(r=>r[0]).map(r=>`<tr><td>${esc(r[0])}${th(r)}</td><td>${esc(r[1])}</td></tr>`).join("")}</table>`:"";
   const sec=(t,h)=>h?`<div class="h">${t}</div>${h}`:"";
   const cau=(V.cautions||[]).filter(Boolean);
-  $("sheet").innerHTML=`<div class="hd"><div><div class="t1">PRODUCT</div><h2>INGREDIENT</h2><div class="t3">${esc(S.brands.join(" · "))}</div></div><div class="logos">${logos}</div></div>
+  $("sheet").innerHTML=`<div class="hd"><div><div class="t1">PRODUCT</div><h2>INGREDIENT</h2><div class="t3">${esc(S.brands.join(" · "))}</div></div><div class="hr"><div class="logos">${logos}</div>${S.effDate?`<div class="eff">Effective Date: ${fmtDate(S.effDate)}</div>`:""}</div></div>
   ${V.menu?`<div class="t3" style="margin-bottom:4px">${esc(V.menu)}</div>`:""}
   <div class="pn"><div class="pt"><div class="c">${esc(S.code)}</div><div class="n">${esc(V.nameTh)}</div><div class="e">${esc(S.nameEn)}</div></div>${ph.length?`<div class="pp">${ph.map(p=>`<img src="${p}">`).join("")}</div>`:""}</div>
   <div class="mid"><div class="info desc">${esc(V.desc)}</div></div>
@@ -218,6 +222,7 @@ function render(){
   save();
 }
 ["code","nameTh","nameEn","menu","desc","allergen","halalNo"].forEach(k=>$(k).oninput=e=>{S[k]=e.target.value;render()});
+$("effDate").oninput=e=>{S.effDate=e.target.value;render()};
 $("cautions").oninput=e=>{S.cautions=e.target.value.split("\n");render()};
 document.querySelectorAll("[name=halal]").forEach(r=>r.onchange=()=>{S.halal=r.value;render()});
 const readImg=(f,max,cb)=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);cb(c.toDataURL(f.type==="image/png"?"image/png":"image/jpeg",.85))};im.src=fr.result};fr.readAsDataURL(f)};
@@ -443,7 +448,7 @@ async function exportDocx(){
   const tbl=(rows,cw)=>new D.Table({width:{size:W,type:D.WidthType.DXA},columnWidths:cw,rows});
   const kids=[];
   const logoRuns=[];for(const b of S.brands){const l=logoOf(b);if(l)logoRuns.push(await imgRun(l,56),gap());else logoRuns.push(run(b,{bold:true,color:GREEN,size:26}),gap())}
-  kids.push(tbl([new D.TableRow({children:[cell([para("PRODUCT",{size:18,color:"6B6860"}),para("INGREDIENT",{size:52,bold:true,color:GREEN,after:0}),para(S.brands.join(" · "),{size:20,color:"6B6860"})],6200),cell([para(logoRuns,{align:D.AlignmentType.RIGHT})],W-6200)]})],[6200,W-6200]));
+  kids.push(tbl([new D.TableRow({children:[cell([para("PRODUCT",{size:18,color:"6B6860"}),para("INGREDIENT",{size:52,bold:true,color:GREEN,after:0}),para(S.brands.join(" · "),{size:20,color:"6B6860"})],6200),cell([para(logoRuns,{align:D.AlignmentType.RIGHT}),...(S.effDate?[para("Effective Date: "+fmtDate(S.effDate),{align:D.AlignmentType.RIGHT,bold:true,color:GREEN,size:20})]:[])],W-6200)]})],[6200,W-6200]));
   kids.push(new D.Paragraph({border:{bottom:{style:D.BorderStyle.SINGLE,size:24,color:GREEN,space:1}},spacing:{after:120},children:[]}));
   if(V.menu)kids.push(para(V.menu,{color:"6B6860"}));
   const pl=[para(S.code,{size:18,color:"6B6860"}),para(V.nameTh,{size:34,bold:true}),para(S.nameEn,{size:18,color:"6B6860",after:0})];
@@ -470,7 +475,8 @@ async function exportPptx(){
     s.addShape(P.ShapeType.rect,{x:0,y:0,w:13.33,h:.16,fill:{color:GREEN},line:{color:GREEN}});
     s.addText([{text:"PRODUCT",options:{fontSize:10,color:"6B6860",breakLine:true}},{text:title,options:{fontSize:26,bold:true,color:GREEN}}],{x:.5,y:.3,w:7.6,h:.95,fontFace:F,valign:"top",margin:0});
     let x=12.83;
-    for(const b of S.brands.slice().reverse()){const l=logoOf(b);if(l){const d=await dims(l),h=.8,w=h*d.w/d.h;x-=w;s.addImage({data:l,x,y:.3,w,h});x-=.15}else{const w=Math.max(.7,.14*b.length+.3);x-=w;s.addText(b,{x,y:.4,w,h:.55,align:"center",valign:"middle",bold:true,color:GREEN,fontFace:F,fontSize:14,line:{color:GREEN,width:1.5}});x-=.15}}
+    for(const b of S.brands.slice().reverse()){const l=logoOf(b);if(l){const d=await dims(l),h=.7,w=h*d.w/d.h;x-=w;s.addImage({data:l,x,y:.3,w,h});x-=.15}else{const w=Math.max(.7,.14*b.length+.3);x-=w;s.addText(b,{x,y:.35,w,h:.5,align:"center",valign:"middle",bold:true,color:GREEN,fontFace:F,fontSize:14,line:{color:GREEN,width:1.5}});x-=.15}}
+    if(S.effDate)s.addText("Effective Date: "+fmtDate(S.effDate),{x:8.33,y:1.0,w:4.5,h:.25,align:"right",fontFace:F,fontSize:11,bold:true,color:GREEN,margin:0});
     s.addShape(P.ShapeType.line,{x:.5,y:1.3,w:12.33,h:0,line:{color:GREEN,width:2.5}});
     {const cols=[DK,GREEN,"FFFFFF"];for(let i=0;i<41;i++){if(i%3===2)continue;s.addShape(P.ShapeType.rect,{x:.5+i*.3,y:7.18,w:.3,h:.16,fill:{color:cols[i%3]},line:{color:cols[i%3],width:0}})}s.addShape(P.ShapeType.rect,{x:.5,y:7.34,w:12.33,h:.05,fill:{color:RED},line:{color:RED,width:0}})}
   };
