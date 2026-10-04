@@ -50,7 +50,7 @@ textarea{resize:vertical;min-height:54px}
 .sheet li{padding:1px 0;font-size:13px}
 .sheet li:before{content:"• ";color:var(--acc,var(--grn))}
 table.st{width:100%;border-collapse:collapse;font-size:13px}
-.st td{border:1px solid var(--brd);padding:3px 8px}.st.ph th{background:var(--acct,#f1f0ea);font-size:12px;text-align:left;padding:4px 8px;border:1px solid var(--brd);color:var(--acc,var(--grn))}.st.ph th:nth-child(2){text-align:right;width:120px}.st.ph th:nth-child(3){width:150px}.st.ph td:nth-child(2){text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;width:120px}.st.ph td:nth-child(3){text-align:left;white-space:normal;width:150px}
+.st td{border:1px solid var(--brd);padding:3px 8px}.st.ph th{background:var(--acct,#f1f0ea);font-size:12px;text-align:left;padding:4px 8px;border:1px solid var(--brd);color:var(--acc,var(--grn))}.st.ph th:nth-child(2){text-align:center;width:130px}.st.ph th:nth-child(3){width:150px}.st.ph td:nth-child(2){text-align:center;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;width:130px}.st.ph td:nth-child(3){text-align:left;white-space:normal;width:150px}
 .st td:last-child{white-space:nowrap;width:120px;text-align:center}
 .warn{border:1px solid #e6c36a;background:#fef8ec;border-radius:6px;padding:6px 10px;font-size:12.5px;margin-top:10px}
 .warn p{margin:2px 0}
@@ -510,7 +510,7 @@ async function exportDocx(){
   const table2=async(k)=>{const rows=[];for(const r of V[k].filter(r=>r[0])){const ch=[para(r[0])];if(dp&&(r[2]||[]).length)ch.push(para(await imgs(r[2],46)));rows.push(new D.TableRow({children:[cell(ch,8000,{b:bd}),cell([para(r[1]||"",{align:D.AlignmentType.CENTER})],W-8000,{b:bd})]}))}if(rows.length)kids.push(tbl(rows,[8000,W-8000]))};
   head(L.look);if(V.desc)kids.push(para(V.desc,{after:80,indent:{left:240}}));kids.push(para([run("• "+L.allergen+": "),run(V.allergen||"-",{bold:true})],{indent:{left:240}}));kids.push(para("• "+L.halal+": "+(S.halal==="YES"?"☑ YES ☐ NO":"☐ YES ☑ NO")+(S.halalNo?" "+S.halalNo:""),{indent:{left:240}}));
   if(V.phys.some(r=>r[0])){head(L.phys);
-    const R_=D.AlignmentType.RIGHT,hd=(tx,w,al)=>cell([para(tx,{bold:true,size:18,color:GREEN,align:al})],w,{b:bd,fill:TINT}),rows=[new D.TableRow({children:[hd(L.item,6000),hd(L.value,2000,R_),hd(L.unit,W-8000)]})];
+    const R_=D.AlignmentType.CENTER,hd=(tx,w,al)=>cell([para(tx,{bold:true,size:18,color:GREEN,align:al})],w,{b:bd,fill:TINT}),rows=[new D.TableRow({children:[hd(L.item,6000),hd(L.value,2000,R_),hd(L.unit,W-8000)]})];
     for(const r of V.phys.filter(r=>r[0])){const[n,u]=splitVal(r[1]),ch=[para(r[0])];if(dp&&(r[2]||[]).length)ch.push(para(await imgs(r[2],46)));
       rows.push(new D.TableRow({children:[cell(ch,6000,{b:bd}),cell([para(n||u,{bold:true,align:n?R_:undefined})],n?2000:W-6000,{b:bd}),...(n?[cell([para(u)],W-8000,{b:bd})]:[])]}))}
     kids.push(tbl(rows,[6000,2000,W-8000]))}
@@ -550,7 +550,7 @@ async function exportPptx(){
   if(V.phys.some(r=>r[0])||V.store.some(r=>r[0])){s=P.addSlide();await addH(s,L.phys.length>20?"INGREDIENT":"INGREDIENT");let y=1.5;
     const ph=V.phys.filter(r=>r[0]);if(ph.length){sec(s,L.phys,y);y+=.45;
       const hd=(x,al)=>({text:x,options:{bold:true,color:GREEN,fill:{color:TINT},align:al||"left"}});
-      s.addTable([[hd(L.item),hd(L.value,"right"),hd(L.unit)],...ph.map(r=>{const[n,u]=splitVal(r[1]);return[{text:r[0]},{text:n||u,options:{bold:true,align:n?"right":"left"}},{text:n?u:""}]})],{x:.5,y,w:12.33,colW:[7.0,2.2,3.13],fontFace:F,fontSize:11,rowH:.3,border:{type:"solid",color:"CCCCCC",pt:.75},valign:"middle"});y+=(ph.length+1)*.34+.3}
+      s.addTable([[hd(L.item),hd(L.value,"center"),hd(L.unit)],...ph.map(r=>{const[n,u]=splitVal(r[1]);return[{text:r[0]},{text:n||u,options:{bold:true,align:n?"center":"left"}},{text:n?u:""}]})],{x:.5,y,w:12.33,colW:[7.0,2.2,3.13],fontFace:F,fontSize:11,rowH:.3,border:{type:"solid",color:"CCCCCC",pt:.75},valign:"middle"});y+=(ph.length+1)*.34+.3}
     const st=V.store.filter(r=>r[0]);if(st.length){sec(s,L.store,y);y+=.45;tbl(s,st,y)}}
   // 3 จุดรับ + ตำหนิ
   const rc=V.recv.filter(r=>r[0]),rj=V.rej.filter(r=>r[0]),df=V.defect.filter(r=>r[0]);
