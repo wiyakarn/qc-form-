@@ -87,7 +87,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
     <div class="row"><select id="logoFor"></select><button class="btn" onclick="$('logoFile').click()">🖼 อัปโหลดโลโก้</button></div>
     <div class="bar" style="margin-top:0"><button class="btn p" onclick="$('logoMulti').click()">🖼 อัปโหลดหลายโลโก้พร้อมกัน</button></div><input type="file" id="logoMulti" accept="image/*" multiple hidden>
     <input type="file" id="logoFile" accept="image/*" hidden>
-    <div style="font-size:11px;color:var(--tx2);margin-top:4px">โลโก้แสดงที่มุมขวาบนของฟอร์ม · แบรนด์ที่ยังไม่มีโลโก้จะแสดงเป็นชื่อ</div>
+    <div style="font-size:11px;color:var(--tx2);margin-top:4px">โลโก้ที่อัปโหลดจะถูกจำไว้ และขึ้นอัตโนมัติทุกครั้ง · แสดงที่มุมขวาบนของฟอร์ม · แบรนด์ที่ยังไม่มีโลโก้จะแสดงเป็นชื่อ</div>
   </div>
   <div class="sec"><b>สี / เอกลักษณ์ของแบรนด์</b>
     <div class="note" style="margin:0 0 6px">ดึงสีจากโลโก้อัตโนมัติ ใช้กับหัวเอกสาร เส้น แถบล่าง และไฟล์ที่ส่งออก</div>
@@ -178,8 +178,9 @@ try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.brands)S=Object.assign(blank(),{...P.shrimp,cautions:CAUT.slice()});
 S.lang=S.lang||"orig";S.tr=S.tr||{};S.theme=S.theme||{};
 const $=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const allBrands=()=>[...DEF_BRANDS,...(S.customBrands||[])];
-const logoOf=b=>(S.logos&&S.logos[b])||(b==="TPC"?TPC_LOGO:(BUILTIN_LOGOS[b]||""));
+const allBrands=()=>{const a=[...DEF_BRANDS];[...(S.customBrands||[]),...Object.keys(SHARED)].forEach(b=>{if(!a.includes(b))a.push(b)});return a};
+const SHARED={};
+const logoOf=b=>(S.logos&&S.logos[b])||(b==="TPC"?TPC_LOGO:(BUILTIN_LOGOS[b]||SHARED[b]||""));
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function brandsUI(){
   const cur=$("logoFor").value;$("logoFor").innerHTML=allBrands().map(b=>`<option${b===cur?" selected":""}>${esc(b)}</option>`).join("");
@@ -229,7 +230,7 @@ $("cautions").oninput=e=>{S.cautions=e.target.value.split("\n");render()};
 document.querySelectorAll("[name=halal]").forEach(r=>r.onchange=()=>{S.halal=r.value;render()});
 const readImg=(f,max,cb)=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);cb(c.toDataURL(f.type==="image/png"?"image/png":"image/jpeg",.85))};im.src=fr.result};fr.readAsDataURL(f)};
 function addBrand(){const n=$("newBrand").value.trim();if(!n||allBrands().includes(n))return;S.customBrands.push(n);S.brands.push(n);$("newBrand").value="";brandsUI();render()}
-$("logoFile").onchange=e=>{const f=e.target.files[0],b=$("logoFor").value;if(!f||!b)return;readImg(f,300,d=>{S.logos[b]=d;delete THC[b];if(S.theme)delete S.theme[b];render()});e.target.value=""};
+$("logoFile").onchange=e=>{const f=e.target.files[0],b=$("logoFor").value;if(!f||!b)return;readImg(f,300,d=>setLogo(b,d));e.target.value=""};
 function preset(k){const keep={lang:S.lang,brands:S.brands,customBrands:S.customBrands,logos:S.logos,photos:[]};S=Object.assign(blank(),JSON.parse(JSON.stringify(P[k])),keep);fieldsUI();listsUI();brandsUI();phUI();render()}
 function exportJ(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:"application/json"}));a.download=(S.code||"product")+"-ingredient.json";a.click()}
 $("imp").onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{S=Object.assign(blank(),JSON.parse(t));fieldsUI();listsUI();brandsUI();render()}catch(x){alert("ไฟล์ไม่ถูกต้อง")}});e.target.value=""};
@@ -567,9 +568,20 @@ const Lib={kind:"local",db:null,
     const l=this._l();l[id]={meta,json,photos};try{localStorage.setItem(LSK,JSON.stringify(l))}catch(e){throw new Error("พื้นที่เบราว์เซอร์เต็ม ลดจำนวนรูปแล้วลองใหม่")}},
   async photos(id){if(this.db){const o={};(await this.db.collection("ingredients/"+id+"/photos").get()).docs.forEach(d=>o[d.id]=d.data().src);return o}return(this._l()[id]||{}).photos||{}},
   async json(id){if(this.db){const d=await this.db.doc("ingredients/"+id+"/data/main").get();return d.exists?d.data().json:null}return(this._l()[id]||{}).json||null},
+  async loadLogos(){const o={};
+    if(this.db){(await this.db.collection("brandlogos").get()).docs.forEach(d=>{const v=d.data();if(v&&v.name&&v.src)o[v.name]=v.src})}
+    else{try{Object.assign(o,JSON.parse(localStorage.getItem("pi.logos.v1"))||{})}catch(e){}}return o},
+  async saveLogo(name,src){
+    if(this.db){await this.db.doc("brandlogos/"+safeId(name)).set({name,src});return}
+    const o=JSON.parse(localStorage.getItem("pi.logos.v1")||"{}");o[name]=src;localStorage.setItem("pi.logos.v1",JSON.stringify(o))},
   async remove(id){if(this.db){const db=this.db,col=db.collection("ingredients/"+id+"/photos");for(const d of(await col.get()).docs)await db.doc("ingredients/"+id+"/photos/"+d.id).delete();await db.doc("ingredients/"+id+"/data/main").delete();await db.doc("ingredients/"+id).delete();return}
     const l=this._l();delete l[id];localStorage.setItem(LSK,JSON.stringify(l))}};
-Lib.init();
+Lib.init().then(()=>Lib.loadLogos()).then(o=>{Object.assign(SHARED,o);Object.keys(THC).forEach(k=>{if(THC[k]===null)delete THC[k]});brandsUI();render()}).catch(()=>{});
+async function setLogo(name,src){
+  if(!allBrands().includes(name)){S.customBrands.push(name)}
+  SHARED[name]=src;if(S.logos)delete S.logos[name];delete THC[name];if(S.theme)delete S.theme[name];brandsUI();render();
+  try{await Lib.saveLogo(name,src)}catch(e){S.logos[name]=src;$("libSt").textContent="จำโลโก้ไว้ถาวรไม่ได้ (ไม่มีสิทธิ์เขียน) ใช้ได้เฉพาะเอกสารนี้";render()}
+}
 async function saveToLib(){
   const st=$("libSt");
   if(!S.brands.length){st.textContent="เลือกแบรนด์อย่างน้อย 1 แบรนด์ก่อนบันทึก";return}
@@ -665,8 +677,8 @@ function showLM(){
   o.querySelectorAll("[data-lmn]").forEach(s=>s.oninput=()=>LM[+s.dataset.lmn].nw=s.value);
   o.querySelector("[data-x]").onclick=()=>{LM=null;closeOv("ov4")};
   o.querySelector("[data-ok]").onclick=()=>{let n=0;
-    LM.forEach(m=>{const name=(m.nw.trim()||m.brand);if(!name)return;if(!allBrands().includes(name))S.customBrands.push(name);S.logos[name]=m.src;delete THC[name];if(S.theme)delete S.theme[name];if(!S.brands.includes(name))S.brands.push(name);n++});
-    LM=null;closeOv("ov4");brandsUI();render();$("libSt").textContent=n?"ใช้โลโก้ "+n+" แบรนด์แล้ว (บันทึกเข้าคลังเพื่อเก็บถาวร)":"ยังไม่ได้เลือกแบรนด์ให้โลโก้"};
+    LM.forEach(m=>{const name=(m.nw.trim()||m.brand);if(!name)return;if(!S.brands.includes(name))S.brands.push(name);setLogo(name,m.src);n++});
+    LM=null;closeOv("ov4");brandsUI();render();$("libSt").textContent=n?"จำโลโก้ "+n+" แบรนด์แล้ว จะขึ้นอัตโนมัติทุกครั้ง":"ยังไม่ได้เลือกแบรนด์ให้โลโก้"};
 }
 
 fieldsUI();listsUI();brandsUI();phUI();render();
