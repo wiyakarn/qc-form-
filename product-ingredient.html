@@ -201,7 +201,7 @@ function render(){
   <div class="pn"><div class="pt"><div class="c">${esc(S.code)}</div><div class="n">${esc(V.nameTh)}</div><div class="e">${esc(S.nameEn)}</div></div>${ph.length?`<div class="pp">${ph.map(p=>`<img src="${p}">`).join("")}</div>`:""}</div>
   <div class="mid"><div class="info desc">${esc(V.desc)}</div></div>
   <div class="h">${L.look}</div><ul><li>${L.allergen}: <b>${esc(V.allergen||"-")}</b></li><li>${L.halal}: ${S.halal==="YES"?"☑ YES ☐ NO":"☐ YES ☑ NO"} ${esc(S.halalNo)}</li></ul>
-  ${sec(L.phys,ul("phys"))}${sec(L.store,tbl("store"))}${sec(L.recv,ul("recv"))}${sec(L.rej,ul("rej")+(V.defect.some(r=>r[0])?`<div style="font-weight:600;font-size:13px;margin:6px 0 2px">${L.total}</div>`+tbl("defect"):""))}
+  ${sec(L.phys,ul("phys"))}${sec(L.store,tbl("store"))}${sec(L.recv,ul("recv"))}${sec(L.rej,ul("rej")+(V.defect.some(r=>r[0])?`<div class="kp" style="font-weight:600;font-size:13px;margin:6px 0 2px">${L.total}</div>`+tbl("defect"):""))}
   ${cau.length?`<div class="warn"><b>${L.caut}</b>${cau.map(c=>`<p>${esc(c)}</p>`).join("")}</div>`:""}
   <div class="ft"></div>`;
   $("sheet").lang=S.lang==="orig"?"th":S.lang;
@@ -387,20 +387,21 @@ async function snap(){
   await lib("html2canvas");
   const c=$("sheet").cloneNode(true);c.removeAttribute("id");c.style.cssText="position:fixed;left:-10000px;top:0;width:794px;max-width:none;box-shadow:none;margin:0";document.body.appendChild(c);
   try{await new Promise(r=>setTimeout(r,80));
-    const top=c.getBoundingClientRect().top,marks=[...c.querySelectorAll(".h,li,tr,.warn,.pn,.dp,.hd")].map(e=>Math.round((e.getBoundingClientRect().top-top)*2)).filter(y=>y>0).sort((a,b)=>a-b);
+    const top=c.getBoundingClientRect().top,units=[...c.querySelectorAll(".hd,.pn,.mid,.h,.kp,li,tr,.warn,.ft")].filter(u=>!u.closest(".warn")||u.classList.contains("warn")),marks=[];
+    units.forEach((u,i)=>{const pv=units[i-1];if(i&&!(pv&&(pv.classList.contains("h")||pv.classList.contains("kp"))))marks.push(Math.round((u.getBoundingClientRect().top-top)*2))});
     const canvas=await html2canvas(c,{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false});
     return{canvas,marks}}finally{c.remove()}
 }
 const exportPng=async()=>{const{canvas}=await snap();return new Promise(r=>canvas.toBlob(r,"image/png"))};
 async function exportPdf(){
   const{canvas,marks}=await snap();await lib("jspdf");
-  const pdf=new window.jspdf.jsPDF({unit:"mm",format:"a4"}),pxmm=canvas.width/210,maxH=Math.floor(281*pxmm);
+  const pdf=new window.jspdf.jsPDF({unit:"mm",format:"a4"}),pxmm=canvas.width/210,maxH=Math.floor(277*pxmm)-2;
   let y=0,first=true;
   while(y<canvas.height-2){
     let end=Math.min(canvas.height,y+maxH);
-    if(end<canvas.height){const c=marks.filter(m=>m>y+maxH*0.45&&m<=end);if(c.length)end=c[c.length-1]}
-    const h=end-y,t=document.createElement("canvas");t.width=canvas.width;t.height=h;const g=t.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,t.width,h);g.drawImage(canvas,0,y,canvas.width,h,0,0,canvas.width,h);
-    if(!first)pdf.addPage();first=false;pdf.addImage(t.toDataURL("image/jpeg",.92),"JPEG",0,8,210,h/pxmm);y=end}
+    if(end<canvas.height){const c=marks.filter(m=>m>y+20&&m<=end);if(c.length)end=c[c.length-1]}
+    const sy=first?y:Math.max(0,y-2),h=end-sy,t=document.createElement("canvas");t.width=canvas.width;t.height=h;const g=t.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,t.width,h);g.drawImage(canvas,0,sy,canvas.width,h,0,0,canvas.width,h);
+    if(!first)pdf.addPage();first=false;pdf.addImage(t.toDataURL("image/jpeg",.92),"JPEG",0,10,210,h/pxmm);y=end}
   return pdf.output("blob");
 }
 async function exportDocx(){
