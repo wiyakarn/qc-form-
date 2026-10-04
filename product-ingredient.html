@@ -30,14 +30,14 @@ textarea{resize:vertical;min-height:54px}
 .inl label{display:flex;gap:4px;align-items:center;margin:0;font-size:13px;color:var(--tx)}
 .stage{padding:20px;overflow:auto}
 .sheet{width:794px;max-width:100%;margin:0 auto;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);padding:28px 34px;position:relative}
-.hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:4px solid var(--grn);padding-bottom:10px;margin-bottom:12px}
+.hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:4px solid var(--acc,var(--grn));padding-bottom:10px;margin-bottom:12px}
 .hd .t1{font-size:11px;letter-spacing:.12em;color:var(--tx2)}
-.hd h2{font-size:26px;line-height:1.15;color:var(--grn)}
+.hd h2{font-size:26px;line-height:1.15;color:var(--acc,var(--grn))}
 .hd .t3{font-size:13px;color:var(--tx2)}
 .logos{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;max-width:50%}
 .logos img{height:70px;max-width:110px;object-fit:contain}
-.logos .lt{height:50px;min-width:60px;padding:0 10px;border:2px solid var(--grn);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--grn)}
-.pn{background:var(--grn2);border-left:5px solid var(--grn);padding:8px 12px;margin-bottom:10px}
+.logos .lt{height:50px;min-width:60px;padding:0 10px;border:2px solid var(--acc,var(--grn));border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--acc,var(--grn))}
+.pn{background:var(--acct,var(--grn2));border-left:5px solid var(--acc,var(--grn));padding:8px 12px;margin-bottom:10px}
 .pn .c{font-size:12px;color:var(--tx2)}.pn .n{font-weight:700;font-size:17px}.pn .e{font-size:12px;color:var(--tx2)}
 .desc{margin-bottom:10px}
 .mid{display:flex;gap:12px;margin-bottom:6px}
@@ -47,12 +47,12 @@ textarea{resize:vertical;min-height:54px}
 .h{font-weight:700;background:#f1f0ea;padding:3px 8px;margin:10px 0 4px;border-radius:4px;font-size:13px}
 .sheet ul{list-style:none;padding-left:8px}
 .sheet li{padding:1px 0;font-size:13px}
-.sheet li:before{content:"• ";color:var(--grn)}
+.sheet li:before{content:"• ";color:var(--acc,var(--grn))}
 table.st{width:100%;border-collapse:collapse;font-size:13px}
 .st td{border:1px solid var(--brd);padding:3px 8px}.st td:last-child{white-space:nowrap;width:120px;text-align:center}
 .warn{border:1px solid #e6c36a;background:#fef8ec;border-radius:6px;padding:6px 10px;font-size:12.5px;margin-top:10px}
 .warn p{margin:2px 0}
-.ft{margin-top:12px;height:12px;background:repeating-linear-gradient(90deg,#2f2b29 0 14px,#00774a 14px 28px,#fff 28px 42px);border-bottom:4px solid #ee1b3a}
+.ft{margin-top:12px;height:12px;background:repeating-linear-gradient(90deg,var(--dk,#2f2b29) 0 14px,var(--acc,#00774a) 14px 28px,#fff 28px 42px);border-bottom:4px solid var(--acc2,#ee1b3a)}
 
 .note{font-size:11px;color:var(--tx2);margin-top:4px}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
@@ -86,6 +86,12 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
     <div class="row"><select id="logoFor"></select><button class="btn" onclick="$('logoFile').click()">🖼 อัปโหลดโลโก้</button></div>
     <input type="file" id="logoFile" accept="image/*" hidden>
     <div style="font-size:11px;color:var(--tx2);margin-top:4px">โลโก้แสดงที่มุมขวาบนของฟอร์ม · แบรนด์ที่ยังไม่มีโลโก้จะแสดงเป็นชื่อ</div>
+  </div>
+  <div class="sec"><b>สี / เอกลักษณ์ของแบรนด์</b>
+    <div class="note" style="margin:0 0 6px">ดึงสีจากโลโก้อัตโนมัติ ใช้กับหัวเอกสาร เส้น แถบล่าง และไฟล์ที่ส่งออก</div>
+    <label>ใช้ธีมของแบรนด์</label><select id="thBrand"></select>
+    <div class="row" style="margin-top:6px"><label style="margin:0;flex:1">สีหลัก<br><input type="color" id="thAcc" style="width:100%;height:30px;padding:0"></label><label style="margin:0;flex:1">สีเน้น (เส้นล่าง)<br><input type="color" id="thAcc2" style="width:100%;height:30px;padding:0"></label><label style="margin:0;flex:1">สีเข้ม<br><input type="color" id="thDk" style="width:100%;height:30px;padding:0"></label></div>
+    <div class="bar"><button class="btn" onclick="resetTheme()">↻ ดึงสีจากโลโก้ใหม่</button></div>
   </div>
   <div class="sec"><b>แนบสเปค</b>
     <div class="bar" style="margin-top:0"><button class="btn p" onclick="$('specFile').click()">📎 แนบสเปค (Word / PDF / txt)</button><button class="btn" onclick="openPaste()">วางข้อความ</button></div>
@@ -164,7 +170,7 @@ let S,TRBUSY=false;
 const blank=()=>({brands:["TPC"],customBrands:[],logos:{},code:"",nameTh:"",nameEn:"",menu:"",desc:"",allergen:"",halal:"NO",halalNo:"",photos:[],lang:"orig",tr:{},phys:[],store:[],recv:[],rej:[],defect:[],cautions:[]});
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.brands)S=Object.assign(blank(),{...P.shrimp,cautions:CAUT.slice()});
-S.lang=S.lang||"orig";S.tr=S.tr||{};
+S.lang=S.lang||"orig";S.tr=S.tr||{};S.theme=S.theme||{};
 const $=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const allBrands=()=>[...DEF_BRANDS,...(S.customBrands||[])];
 const logoOf=b=>(S.logos&&S.logos[b])||(b==="TPC"?TPC_LOGO:"");
@@ -204,8 +210,10 @@ function render(){
   ${sec(L.phys,ul("phys"))}${sec(L.store,tbl("store"))}${sec(L.recv,ul("recv"))}${sec(L.rej,ul("rej")+(V.defect.some(r=>r[0])?`<div class="kp" style="font-weight:600;font-size:13px;margin:6px 0 2px">${L.total}</div>`+tbl("defect"):""))}
   ${cau.length?`<div class="warn"><b>${L.caut}</b>${cau.map(c=>`<p>${esc(c)}</p>`).join("")}</div>`:""}
   <div class="ft"></div>`;
+  const TH=themeFor();$("sheet").style.cssText="--acc:"+TH.acc+";--acc2:"+TH.acc2+";--dk:"+TH.dk+";--acct:"+tint(TH.acc,.12);
   $("sheet").lang=S.lang==="orig"?"th":S.lang;
   const vl=$("viewLang");if(vl)vl.value=S.lang||"orig";
+  if(typeof thUI==="function")thUI();
   const tr=S.tr&&S.tr[S.lang];if($("trSt")&&!TRBUSY)$("trSt").innerHTML=S.lang==="orig"?"แสดงข้อความต้นฉบับ":(!tr?"ยังไม่ได้แปล กด “แปลอัตโนมัติ”":(tr.src!==srcKey()?'ข้อมูลต้นฉบับเปลี่ยนแล้ว <span class="stale">กดแปลใหม่</span>':"แปลอัตโนมัติแล้ว ตรวจทานก่อนใช้งาน"));
   save();
 }
@@ -214,7 +222,7 @@ $("cautions").oninput=e=>{S.cautions=e.target.value.split("\n");render()};
 document.querySelectorAll("[name=halal]").forEach(r=>r.onchange=()=>{S.halal=r.value;render()});
 const readImg=(f,max,cb)=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);cb(c.toDataURL(f.type==="image/png"?"image/png":"image/jpeg",.85))};im.src=fr.result};fr.readAsDataURL(f)};
 function addBrand(){const n=$("newBrand").value.trim();if(!n||allBrands().includes(n))return;S.customBrands.push(n);S.brands.push(n);$("newBrand").value="";brandsUI();render()}
-$("logoFile").onchange=e=>{const f=e.target.files[0],b=$("logoFor").value;if(!f||!b)return;readImg(f,300,d=>{S.logos[b]=d;render()});e.target.value=""};
+$("logoFile").onchange=e=>{const f=e.target.files[0],b=$("logoFor").value;if(!f||!b)return;readImg(f,300,d=>{S.logos[b]=d;delete THC[b];if(S.theme)delete S.theme[b];render()});e.target.value=""};
 function preset(k){const keep={lang:S.lang,brands:S.brands,customBrands:S.customBrands,logos:S.logos,photos:[]};S=Object.assign(blank(),JSON.parse(JSON.stringify(P[k])),keep);fieldsUI();listsUI();brandsUI();phUI();render()}
 function exportJ(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:"application/json"}));a.download=(S.code||"product")+"-ingredient.json";a.click()}
 $("imp").onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{S=Object.assign(blank(),JSON.parse(t));fieldsUI();listsUI();brandsUI();render()}catch(x){alert("ไฟล์ไม่ถูกต้อง")}});e.target.value=""};
@@ -392,7 +400,7 @@ const LIBS={jszip:"https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min
 const LCHK={jszip:()=>window.JSZip,pdfjs:()=>window.pdfjsLib,html2canvas:()=>window.html2canvas,jspdf:()=>window.jspdf,docx:()=>window.docx,pptx:()=>window.PptxGenJS};
 const LP={};
 function lib(n){if(LCHK[n]())return Promise.resolve();return LP[n]||(LP[n]=new Promise((ok,no)=>{const s=document.createElement("script");s.src=LIBS[n];s.onload=()=>LCHK[n]()?ok():no(new Error("โหลดไลบรารีไม่สำเร็จ"));s.onerror=()=>{delete LP[n];no(new Error("โหลดไลบรารีไม่สำเร็จ ตรวจสอบอินเทอร์เน็ต"))};document.head.appendChild(s)}))}
-function ctx(){const V=view(),L=LB[S.lang==="orig"?"th":S.lang]||LB.th;return{V,L,photos:S.showPhotos!==false?S.photos.slice(0,MAXP):[],dp:S.dpOn!==false}}
+function ctx(){const V=view(),L=LB[S.lang==="orig"?"th":S.lang]||LB.th;return{V,L,photos:S.showPhotos!==false?S.photos.slice(0,MAXP):[],dp:S.dpOn!==false,th:themeFor()}}
 const baseName=()=>((S.code||"product")+"-ingredient").replace(/[^\w.\-ก-๙]+/g,"_");
 const dims=src=>new Promise(r=>{const i=new Image();i.onload=()=>r({w:i.naturalWidth,h:i.naturalHeight});i.onerror=()=>r({w:1,h:1});i.src=src});
 const u8=src=>{const b=atob(src.split(",")[1]),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a};
@@ -403,7 +411,7 @@ async function saveBlob(name,blob){
 }
 async function snap(){
   await lib("html2canvas");
-  const c=$("sheet").cloneNode(true);c.removeAttribute("id");c.style.cssText="position:fixed;left:-10000px;top:0;width:794px;max-width:none;box-shadow:none;margin:0";document.body.appendChild(c);
+  const c=$("sheet").cloneNode(true);c.removeAttribute("id");c.style.cssText+=";position:fixed;left:-10000px;top:0;width:794px;max-width:none;box-shadow:none;margin:0";document.body.appendChild(c);
   try{await new Promise(r=>setTimeout(r,80));
     const top=c.getBoundingClientRect().top,units=[...c.querySelectorAll(".hd,.pn,.mid,.h,.kp,li,tr,.warn,.ft")].filter(u=>!u.closest(".warn")||u.classList.contains("warn")),marks=[];
     units.forEach((u,i)=>{const pv=units[i-1];if(i&&!(pv&&(pv.classList.contains("h")||pv.classList.contains("kp"))))marks.push(Math.round((u.getBoundingClientRect().top-top)*2))});
@@ -423,7 +431,7 @@ async function exportPdf(){
   return pdf.output("blob");
 }
 async function exportDocx(){
-  await lib("docx");const D=window.docx,{V,L,photos,dp}=ctx(),GREEN="1D6F42",F="Tahoma";
+  await lib("docx");const D=window.docx,{V,L,photos,dp,th}=ctx(),GREEN=th.acc.slice(1).toUpperCase(),TINT=tint(th.acc,.12).slice(1).toUpperCase(),F="Tahoma";
   const nb=(()=>{const n={style:D.BorderStyle.NONE,size:0,color:"FFFFFF"};return{top:n,bottom:n,left:n,right:n}})(),lt={style:D.BorderStyle.SINGLE,size:4,color:"CCCCCC"},bd={top:lt,bottom:lt,left:lt,right:lt};
   const run=(t,o={})=>new D.TextRun({text:String(t),font:F,size:o.size||20,bold:o.bold,color:o.color});
   const para=(ch,o={})=>new D.Paragraph({children:Array.isArray(ch)?ch:[run(ch,o)],spacing:{after:o.after??40},alignment:o.align,indent:o.indent,shading:o.fill?{type:D.ShadingType.CLEAR,fill:o.fill,color:"auto"}:undefined});
@@ -440,7 +448,7 @@ async function exportDocx(){
   if(V.menu)kids.push(para(V.menu,{color:"6B6860"}));
   const pl=[para(S.code,{size:18,color:"6B6860"}),para(V.nameTh,{size:34,bold:true}),para(S.nameEn,{size:18,color:"6B6860",after:0})];
   const pr=photos.length?[para(await imgs(photos,70),{align:D.AlignmentType.RIGHT,after:0})]:[para("")];
-  kids.push(tbl([new D.TableRow({children:[cell(pl,photos.length?6000:W,{fill:"E8F3ED"}),...(photos.length?[cell(pr,W-6000,{fill:"E8F3ED"})]:[])]})],photos.length?[6000,W-6000]:[W]));
+  kids.push(tbl([new D.TableRow({children:[cell(pl,photos.length?6000:W,{fill:TINT}),...(photos.length?[cell(pr,W-6000,{fill:TINT})]:[])]})],photos.length?[6000,W-6000]:[W]));
   if(V.desc)kids.push(para(V.desc,{after:100,indent:{left:0}}));
   const head=t=>kids.push(para(t,{bold:true,fill:"F1F0EA",after:60}));
   const bullets=async k=>{for(const r of V[k].filter(r=>r[0])){kids.push(para([run("• "+r[0]),...(r[1]?[run(" "+r[1],{bold:true})]:[])],{indent:{left:240}}));if(dp&&(r[2]||[]).length)kids.push(para(await imgs(r[2],46),{indent:{left:480}}))}};
@@ -452,24 +460,26 @@ async function exportDocx(){
   if(V.rej.some(r=>r[0])||V.defect.some(r=>r[0])){head(L.rej);await bullets("rej");if(V.defect.some(r=>r[0])){kids.push(para(L.total,{bold:true}));await table2("defect")}}
   const cau=V.cautions.filter(Boolean);
   if(cau.length){kids.push(para("",{after:60}));kids.push(para(L.caut,{bold:true,fill:"FEF8EC"}));cau.forEach(c=>kids.push(para(c,{fill:"FEF8EC",size:19})))}
+  {const n=24,cw=Math.floor(W/n),cols=[th.dk,th.acc,"#FFFFFF"];kids.push(para("",{after:0}));kids.push(tbl([new D.TableRow({height:{value:200,rule:D.HeightRule.EXACT},children:Array.from({length:n},(_,i)=>cell([new D.Paragraph({children:[],spacing:{after:0}})],cw,{fill:cols[i%3].slice(1).toUpperCase()}))})],Array(n).fill(cw)));kids.push(new D.Paragraph({border:{bottom:{style:D.BorderStyle.SINGLE,size:24,color:th.acc2.slice(1).toUpperCase(),space:0}},spacing:{after:0},children:[]}))}
   const doc=new D.Document({creator:"Product Ingredient",sections:[{properties:{page:{margin:{top:720,bottom:720,left:720,right:720}}},children:kids}]});
   return D.Packer.toBlob(doc);
 }
 async function exportPptx(){
-  await lib("pptx");const{V,L,photos,dp}=ctx(),P=new window.PptxGenJS(),GREEN="1D6F42",F="Tahoma";P.layout="LAYOUT_WIDE";P.title="Product Ingredient";
+  await lib("pptx");const{V,L,photos,dp,th}=ctx(),P=new window.PptxGenJS(),GREEN=th.acc.slice(1).toUpperCase(),TINT=tint(th.acc,.12).slice(1).toUpperCase(),F="Tahoma",DK=th.dk.slice(1).toUpperCase(),RED=th.acc2.slice(1).toUpperCase();P.layout="LAYOUT_WIDE";P.title="Product Ingredient";
   const addH=async(s,title)=>{
     s.addShape(P.ShapeType.rect,{x:0,y:0,w:13.33,h:.16,fill:{color:GREEN},line:{color:GREEN}});
     s.addText([{text:"PRODUCT",options:{fontSize:10,color:"6B6860",breakLine:true}},{text:title,options:{fontSize:26,bold:true,color:GREEN}}],{x:.5,y:.3,w:7.6,h:.95,fontFace:F,valign:"top",margin:0});
     let x=12.83;
     for(const b of S.brands.slice().reverse()){const l=logoOf(b);if(l){const d=await dims(l),h=.8,w=h*d.w/d.h;x-=w;s.addImage({data:l,x,y:.3,w,h});x-=.15}else{const w=Math.max(.7,.14*b.length+.3);x-=w;s.addText(b,{x,y:.4,w,h:.55,align:"center",valign:"middle",bold:true,color:GREEN,fontFace:F,fontSize:14,line:{color:GREEN,width:1.5}});x-=.15}}
     s.addShape(P.ShapeType.line,{x:.5,y:1.3,w:12.33,h:0,line:{color:GREEN,width:2.5}});
+    {const cols=[DK,GREEN,"FFFFFF"];for(let i=0;i<41;i++){if(i%3===2)continue;s.addShape(P.ShapeType.rect,{x:.5+i*.3,y:7.18,w:.3,h:.16,fill:{color:cols[i%3]},line:{color:cols[i%3],width:0}})}s.addShape(P.ShapeType.rect,{x:.5,y:7.34,w:12.33,h:.05,fill:{color:RED},line:{color:RED,width:0}})}
   };
   const sec=(s,t,y)=>s.addText(t,{x:.5,y,w:12.33,h:.34,fontFace:F,fontSize:13,bold:true,fill:{color:"F1F0EA"},margin:[0,6,0,6]});
   const tbl=(s,rows,y,h)=>{if(rows.length)s.addTable(rows.map(r=>[{text:r[0]},{text:r[1]||"",options:{bold:true,align:"center"}}]),{x:.5,y,w:12.33,colW:[9.1,3.23],fontFace:F,fontSize:11,rowH:.3,border:{type:"solid",color:"CCCCCC",pt:.75},valign:"middle",autoPage:true,autoPageRepeatHeader:false,newSlideStartY:.5})};
   // 1 สินค้า
   let s=P.addSlide();await addH(s,"INGREDIENT");
   if(V.menu)s.addText(V.menu,{x:.5,y:1.4,w:8,h:.3,fontFace:F,fontSize:12,color:"6B6860",margin:0});
-  s.addShape(P.ShapeType.rect,{x:.5,y:1.8,w:12.33,h:1.4,fill:{color:"E8F3ED"},line:{color:"E8F3ED"}});
+  s.addShape(P.ShapeType.rect,{x:.5,y:1.8,w:12.33,h:1.4,fill:{color:TINT},line:{color:TINT}});
   s.addShape(P.ShapeType.rect,{x:.5,y:1.8,w:.08,h:1.4,fill:{color:GREEN},line:{color:GREEN}});
   s.addText([{text:S.code,options:{fontSize:12,color:"6B6860",breakLine:true}},{text:V.nameTh,options:{fontSize:26,bold:true,breakLine:true}},{text:S.nameEn,options:{fontSize:12,color:"6B6860"}}],{x:.75,y:1.85,w:photos.length?8:11.8,h:1.3,fontFace:F,valign:"middle",margin:0});
   let px=12.7;for(const p of photos.slice().reverse()){const d=await dims(p),h=1.2,w=Math.min(1.6,h*d.w/d.h);px-=w;s.addImage({data:p,x:px,y:1.9,w,h});px-=.1}
@@ -517,7 +527,7 @@ function openReview(){
     <div class="note">ภาษาเอกสาร: ${esc({orig:"ต้นฉบับ",en:"English",th:"ไทย",zh:"中文",ja:"日本語"}[S.lang||"orig"])} · ${DL?"ระบบจะถามยืนยันการบันทึกทีละไฟล์":"ไฟล์จะถูกดาวน์โหลดทันที"}</div></div></div></div>
   <div class="mdf"><span class="note" id="rvMsg" style="margin:0 auto 0 0"></span><button class="btn" data-close>ยกเลิก</button><button class="btn p" id="rvGo">ส่ง / ดาวน์โหลดไฟล์ที่เลือก</button></div></div>`;
   document.body.appendChild(o);
-  const pv=()=>{const box=$("pvw");box.innerHTML="";const c=$("sheet").cloneNode(true);c.removeAttribute("id");c.style.cssText="width:794px;max-width:none;margin:0;box-shadow:none;transform-origin:top left";box.appendChild(c);const sc=Math.min(1,box.clientWidth/794);c.style.transform="scale("+sc+")";box.style.height=Math.ceil(c.offsetHeight*sc)+"px"};
+  const pv=()=>{const box=$("pvw");box.innerHTML="";const c=$("sheet").cloneNode(true);c.removeAttribute("id");c.style.cssText+=";width:794px;max-width:none;margin:0;box-shadow:none;transform-origin:top left";box.appendChild(c);const sc=Math.min(1,box.clientWidth/794);c.style.transform="scale("+sc+")";box.style.height=Math.ceil(c.offsetHeight*sc)+"px"};
   pv();
   const cnt=()=>{const n=o.querySelectorAll("[data-fmt]:checked").length;$("rvGo").textContent=n?`ส่ง / ดาวน์โหลด ${n} ไฟล์`:"เลือกไฟล์ก่อน";$("rvGo").disabled=!n};cnt();
   o.querySelectorAll("[data-fmt]").forEach(x=>x.onchange=cnt);
@@ -591,6 +601,38 @@ async function openLib(){
     if(d.rm){if(t.dataset.sure){await Lib.remove(d.rm);items=items.filter(x=>x.id!==d.rm);if(S.recId===d.rm)delete S.recId;draw()}else{t.dataset.sure="1";t.textContent="ยืนยันลบ?"}}};
 }
 phUI();
+
+/* ===== ธีมสีตามโลโก้แบรนด์ ===== */
+const DEFTH={acc:"#1d6f42",acc2:"#c0392b",dk:"#2f2b29"},THC={};
+const hx=(r,g,b)=>"#"+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,"0")).join("");
+function tint(h,a){const n=parseInt(h.slice(1),16),r=n>>16&255,g=n>>8&255,b=n&255;return hx(r*a+255*(1-a),g*a+255*(1-a),b*a+255*(1-a))}
+function hsl(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;let h=0,s=0;if(d){s=d/(1-Math.abs(2*l-1));h=mx===r?((g-b)/d+6)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60}return{h,s,l}}
+async function extractTheme(src){
+  const im=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src});if(!im)return null;
+  const c=document.createElement("canvas"),k=Math.min(1,80/Math.max(im.width,im.height));c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));
+  const g=c.getContext("2d");g.drawImage(im,0,0,c.width,c.height);const d=g.getImageData(0,0,c.width,c.height).data,B={};
+  for(let i=0;i<d.length;i+=4){if(d[i+3]<200)continue;const r=d[i],gg=d[i+1],b=d[i+2];if(Math.min(r,gg,b)>225)continue;const key=(r>>4)+","+(gg>>4)+","+(b>>4),o=B[key]||(B[key]={n:0,r:0,g:0,b:0});o.n++;o.r+=r;o.g+=gg;o.b+=b}
+  const cs=Object.values(B).map(o=>{const r=o.r/o.n,g2=o.g/o.n,b=o.b/o.n;return{r,g:g2,b,n:o.n,...hsl(r,g2,b)}});
+  if(!cs.length)return null;
+  const sat=cs.filter(x=>x.s>.35&&x.l>.15&&x.l<.8).sort((a,b)=>b.n-a.n),dk=cs.filter(x=>x.l<.3&&x.s<.35).sort((a,b)=>b.n-a.n);
+  const hd=(a,b)=>{const x=Math.abs(a-b);return Math.min(x,360-x)};
+  const p=sat[0],s=p&&sat.find(x=>hd(x.h,p.h)>40);
+  const o={};
+  if(p)o.acc=hx(p.r,p.g,p.b);else if(dk[0])o.acc=hx(dk[0].r,dk[0].g,dk[0].b);
+  if(s)o.acc2=hx(s.r,s.g,s.b);if(dk[0])o.dk=hx(dk[0].r,dk[0].g,dk[0].b);
+  return o;
+}
+function themeBrand(){return(S.themeBrand&&S.brands.includes(S.themeBrand))?S.themeBrand:(S.brands.find(b=>logoOf(b))||S.brands[0])}
+function ensureTheme(b){if(!b||THC[b]!==undefined)return;THC[b]=null;const l=logoOf(b);if(l)extractTheme(l).then(o=>{THC[b]=o;render()})}
+function themeFor(){const b=themeBrand();ensureTheme(b);return Object.assign({},DEFTH,(b&&THC[b])||{},(b&&S.theme&&S.theme[b])||{})}
+function thUI(){
+  const sel=$("thBrand");if(!sel)return;const b=themeBrand(),opts=S.brands.map(x=>`<option${x===b?" selected":""}>${esc(x)}</option>`).join("");
+  if(sel.innerHTML!==opts&&document.activeElement!==sel)sel.innerHTML=opts;
+  const t=themeFor();[["thAcc",t.acc],["thAcc2",t.acc2],["thDk",t.dk]].forEach(([id,v])=>{const e=$(id);if(document.activeElement!==e&&e.value!==v)e.value=v});
+}
+$("thBrand").onchange=e=>{S.themeBrand=e.target.value;render()};
+[["thAcc","acc"],["thAcc2","acc2"],["thDk","dk"]].forEach(([id,k])=>$(id).oninput=e=>{const b=themeBrand();if(!b)return;S.theme=S.theme||{};S.theme[b]=Object.assign(S.theme[b]||{},{[k]:e.target.value});render()});
+function resetTheme(){const b=themeBrand();if(!b)return;if(S.theme)delete S.theme[b];delete THC[b];render()}
 
 fieldsUI();listsUI();brandsUI();phUI();render();
 </script>
