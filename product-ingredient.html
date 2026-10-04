@@ -36,8 +36,8 @@ textarea{resize:vertical;min-height:54px}
 .hd .t3{font-size:13px;color:var(--tx2)}
 .hr{display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:52%}.eff{font-size:12px;font-weight:700;color:var(--acc,var(--grn));white-space:nowrap}
 .logos{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;max-width:100%}
-.logos img{height:70px;max-width:110px;object-fit:contain}
-.logos .lt{height:50px;min-width:60px;padding:0 10px;border:2px solid var(--acc,var(--grn));border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--acc,var(--grn))}
+.logos img{height:88px;max-width:150px;object-fit:contain}
+.logos .lt{height:60px;min-width:72px;font-size:17px;padding:0 10px;border:2px solid var(--acc,var(--grn));border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--acc,var(--grn))}
 .pn{background:var(--acct,var(--grn2));border-left:6px solid var(--acc,var(--grn));padding:14px 16px;margin-bottom:12px}
 .pn .c{font-size:13px;color:var(--tx2)}.pn .n{font-weight:700;font-size:26px;line-height:1.25;margin:2px 0}.pn .e{font-size:13px;color:var(--tx2)}
 .desc{margin-bottom:10px}
@@ -498,7 +498,7 @@ async function exportDocx(){
   const cell=(ch,w,o={})=>new D.TableCell({children:ch,width:{size:w,type:D.WidthType.DXA},borders:o.b||nb,verticalAlign:o.v||D.VerticalAlign.CENTER,shading:o.fill?{type:D.ShadingType.CLEAR,fill:o.fill,color:"auto"}:undefined,margins:{top:60,bottom:60,left:100,right:100}});
   const tbl=(rows,cw)=>new D.Table({width:{size:W,type:D.WidthType.DXA},columnWidths:cw,rows});
   const kids=[];
-  const logoRuns=[];for(const b of S.brands){const l=logoOf(b);if(l)logoRuns.push(await imgRun(l,56),gap());else logoRuns.push(run(b,{bold:true,color:GREEN,size:26}),gap())}
+  const logoRuns=[];for(const b of S.brands){const l=logoOf(b);if(l)logoRuns.push(await imgRun(l,72),gap());else logoRuns.push(run(b,{bold:true,color:GREEN,size:26}),gap())}
   kids.push(tbl([new D.TableRow({children:[cell([para("Product Ingredient",{size:64,bold:true,color:GREEN,after:0})],6200),cell([para(logoRuns,{align:D.AlignmentType.RIGHT}),...(S.effDate?[para("Effective Date: "+fmtDate(S.effDate),{align:D.AlignmentType.RIGHT,bold:true,color:GREEN,size:20})]:[])],W-6200)]})],[6200,W-6200]));
   kids.push(new D.Paragraph({border:{bottom:{style:D.BorderStyle.SINGLE,size:24,color:GREEN,space:1}},spacing:{after:120},children:[]}));
   if(V.menu)kids.push(para(V.menu,{color:"6B6860"}));
@@ -528,8 +528,8 @@ async function exportPptx(){
     s.addShape(P.ShapeType.rect,{x:0,y:0,w:13.33,h:.16,fill:{color:GREEN},line:{color:GREEN}});
     s.addText("Product Ingredient",{x:.5,y:.3,w:7.6,h:.7,fontFace:F,fontSize:36,bold:true,color:GREEN,valign:"middle",margin:0,fit:"shrink"});
     let x=12.83;
-    for(const b of S.brands.slice().reverse()){const l=logoOf(b);if(l){const d=await dims(l),h=.7,w=h*d.w/d.h;x-=w;s.addImage({data:l,x,y:.3,w,h});x-=.15}else{const w=Math.max(.7,.14*b.length+.3);x-=w;s.addText(b,{x,y:.35,w,h:.5,align:"center",valign:"middle",bold:true,color:GREEN,fontFace:F,fontSize:14,line:{color:GREEN,width:1.5}});x-=.15}}
-    if(S.effDate)s.addText("Effective Date: "+fmtDate(S.effDate),{x:8.33,y:1.0,w:4.5,h:.25,align:"right",fontFace:F,fontSize:11,bold:true,color:GREEN,margin:0});
+    for(const b of S.brands.slice().reverse()){const l=logoOf(b);if(l){const d=await dims(l),h=.78,w=h*d.w/d.h;x-=w;s.addImage({data:l,x,y:.27,w,h});x-=.15}else{const w=Math.max(.7,.14*b.length+.3);x-=w;s.addText(b,{x,y:.35,w,h:.5,align:"center",valign:"middle",bold:true,color:GREEN,fontFace:F,fontSize:14,line:{color:GREEN,width:1.5}});x-=.15}}
+    if(S.effDate)s.addText("Effective Date: "+fmtDate(S.effDate),{x:8.33,y:1.06,w:4.5,h:.22,align:"right",fontFace:F,fontSize:11,bold:true,color:GREEN,margin:0});
     s.addShape(P.ShapeType.line,{x:.5,y:1.3,w:12.33,h:0,line:{color:GREEN,width:2.5}});
     {const cols=[DK,GREEN,"FFFFFF"];for(let i=0;i<41;i++){if(i%3===2)continue;s.addShape(P.ShapeType.rect,{x:.5+i*.3,y:7.18,w:.3,h:.16,fill:{color:cols[i%3]},line:{color:cols[i%3],width:0}})}s.addShape(P.ShapeType.rect,{x:.5,y:7.34,w:12.33,h:.05,fill:{color:RED},line:{color:RED,width:0}})}
   };
