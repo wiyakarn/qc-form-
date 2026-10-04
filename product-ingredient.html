@@ -66,6 +66,11 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
 .imgs{display:flex;gap:8px;flex-wrap:wrap}.imgs label{margin:0;position:relative;cursor:pointer}.imgs img{width:90px;height:72px;object-fit:cover;border:2px solid var(--brd);border-radius:6px}.imgs input:checked+img{border-color:var(--grn)}
 .imgs input{position:absolute;top:4px;left:4px}
 .stale{display:inline-block;background:#fef8ec;border:1px solid #e6c36a;border-radius:10px;padding:0 8px;font-size:11px;margin-left:6px}
+.pn{display:flex;gap:12px;align-items:center;justify-content:space-between}.pn .pt{flex:1;min-width:0}.pn .pp{display:flex;gap:6px;flex-shrink:0}.pn .pp img{width:92px;height:76px;object-fit:cover;border-radius:4px;border:1px solid #cfe3d7;background:#fff}
+.dp{display:flex;gap:4px;flex-wrap:wrap;margin:2px 0 4px 10px}.dp img{width:56px;height:46px;object-fit:cover;border:1px solid var(--brd);border-radius:3px}
+.rvg{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(220px,1fr);gap:16px}.pvw{border:1px solid var(--brd);border-radius:6px;overflow:hidden;background:#fff;position:relative}
+.lb{border:1px solid var(--brd);border-radius:8px;margin-top:8px;padding:6px 10px}.lb summary{cursor:pointer;padding:2px 0}.lm{font-size:12px;font-weight:700;color:var(--grn);margin:8px 0 2px}.li{border-top:1px solid var(--brd);padding:6px 0}.ldr{padding:3px 0 2px 10px;font-size:12px}
+@media(max-width:700px){.rvg{grid-template-columns:minmax(0,1fr)}}.rvg>div{min-width:0}
 @media(max-width:900px){.app{grid-template-columns:1fr}.panel{height:auto;position:static}.sheet{padding:16px}}
 @media print{body{background:#fff}.panel{display:none}.app{display:block}.stage{padding:0}.sheet{box-shadow:none;width:100%;padding:0}@page{size:A4;margin:12mm}}
 </style>
@@ -96,8 +101,11 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
     <label>ชื่อสินค้า (English)</label><input type="text" id="nameEn">
     <label>ชื่อเมนู / กลุ่ม</label><input type="text" id="menu">
     <label>คำอธิบายสินค้า</label><textarea id="desc"></textarea>
-    <label>รูปสินค้า (ได้หลายรูป)</label><input type="file" id="photos" accept="image/*" multiple>
-    <div class="bar"><button class="btn" onclick="S.photos=[];render()">ลบรูปทั้งหมด</button></div>
+    <label>รูปสินค้า 2–3 รูป (แสดงด้านขวา) <span id="phCnt" style="float:right"></span></label><input type="file" id="photos" accept="image/*" multiple>
+    <div class="imgs" id="phList" style="margin-top:6px"></div>
+    <label style="display:flex;gap:6px;align-items:center;color:var(--tx);font-size:13px"><input type="checkbox" id="showPh"> ใส่รูปสินค้าในเอกสาร</label>
+    <label style="display:flex;gap:6px;align-items:center;color:var(--tx);font-size:13px"><input type="checkbox" id="showDp"> ใส่รูปตำหนิในเอกสาร</label>
+    <input type="file" id="dpFile" accept="image/*" multiple hidden>
   </div>
   <div class="sec"><b>สารก่อภูมิแพ้ / ฮาลาล</b>
     <label>Food Allergen</label><input type="text" id="allergen">
@@ -106,6 +114,15 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
     <label>เลขที่ใบรับรองฮาลาล</label><input type="text" id="halalNo">
   </div>
   <div id="lists"></div>
+  <div class="sec"><b>คลังข้อมูล (แบรนด์ → หัวข้อ → ตำหนิ)</b>
+    <div class="bar" style="margin-top:0"><button class="btn p" onclick="saveToLib()">💾 บันทึกเข้าคลัง</button><button class="btn" onclick="openLib()">📚 เปิดคลัง</button></div>
+    <div class="note" id="libSt"></div><div class="note" id="libKind"></div>
+  </div>
+  <div class="sec"><b>ดาวน์โหลด / ส่ง</b>
+    <div class="bar" style="margin-top:0"><button class="btn" data-q onclick="quick('pdf')">⬇ PDF</button><button class="btn" data-q onclick="quick('docx')">⬇ Word</button><button class="btn" data-q onclick="quick('pptx')">⬇ PowerPoint</button><button class="btn" data-q onclick="quick('png')">⬇ รูปภาพ</button></div>
+    <div class="bar"><button class="btn p" onclick="openReview()">👁 รีวิวก่อนส่ง (เลือกหลายไฟล์)</button></div>
+    <div class="note" id="dlSt"></div>
+  </div>
   <div class="sec"><b>ข้อควรระวัง (หนึ่งข้อต่อบรรทัด)</b><textarea id="cautions" style="min-height:110px"></textarea></div>
   <div class="sec"><b>ตัวอย่างข้อมูล / จัดการ</b>
     <div class="bar">
@@ -157,12 +174,6 @@ function brandsUI(){
   $("brands").innerHTML=allBrands().map(b=>`<label class="chip ${S.brands.includes(b)?"on":""}"><input type="checkbox" ${S.brands.includes(b)?"checked":""} data-b="${esc(b)}">${esc(b)}</label>`).join("");
   $("brands").querySelectorAll("input").forEach(i=>i.onchange=()=>{const b=i.dataset.b;S.brands=i.checked?[...S.brands,b]:S.brands.filter(x=>x!==b);brandsUI();render()});
 }
-function listsUI(){
-  $("lists").innerHTML=LISTS.map(([k,t,a,b])=>`<div class="sec"><b>${t}</b>${(S[k]||[]).map((r,i)=>`<div class="row"><input type="text" value="${esc(r[0])}" placeholder="${a}" data-k="${k}" data-i="${i}" data-c="0" style="flex:2">${b?`<input type="text" value="${esc(r[1])}" placeholder="${b}" data-k="${k}" data-i="${i}" data-c="1" style="flex:1">`:""}<button class="btn x" data-del="${k}" data-i="${i}">✕</button></div>`).join("")}<button class="btn" data-add="${k}">+ เพิ่มแถว</button></div>`).join("");
-  $("lists").querySelectorAll("input[data-k]").forEach(i=>i.oninput=()=>{S[i.dataset.k][+i.dataset.i][+i.dataset.c]=i.value;render()});
-  $("lists").querySelectorAll("[data-del]").forEach(x=>x.onclick=()=>{S[x.dataset.del].splice(+x.dataset.i,1);listsUI();render()});
-  $("lists").querySelectorAll("[data-add]").forEach(x=>x.onclick=()=>{S[x.dataset.add].push(["",""]);listsUI();render()});
-}
 function fieldsUI(){
   ["code","nameTh","nameEn","menu","desc","allergen","halalNo"].forEach(k=>$(k).value=S[k]||"");
   $("cautions").value=(S.cautions||[]).join("\n");
@@ -174,19 +185,21 @@ zh:{look:"产品特性",allergen:"食品过敏原 (Food Allergen)",halal:"清真
 ja:{look:"製品特性",allergen:"食品アレルゲン (Food Allergen)",halal:"ハラール認証番号 (Halal)",phys:"物理規格",store:"保管温度と賞味期限",recv:"受入時の状態",rej:"不良と許容率",total:"許容不良合計 (Total Defects)",caut:"注意事項："}};
 const LANGN={en:"English",th:"Thai",zh:"Simplified Chinese",ja:"Japanese"};
 const TKEYS=["nameTh","menu","desc","allergen","phys","store","recv","rej","defect","cautions"];
-const srcKey=()=>JSON.stringify(TKEYS.map(k=>S[k]));
-function view(){const t=S.tr&&S.tr[S.lang];return(S.lang!=="orig"&&t&&t.src===srcKey())?Object.assign({},S,t.data):S}
+const PHK0=["rej","defect"],ROWK=["phys","store","recv","rej","defect"];
+const srcKey=()=>JSON.stringify(TKEYS.map(k=>ROWK.includes(k)?(S[k]||[]).map(r=>[r[0],r[1]]):S[k]));
+function view(){const t=S.tr&&S.tr[S.lang];if(!(S.lang!=="orig"&&t&&t.src===srcKey()))return S;const d=Object.assign({},t.data);PHK0.forEach(k=>{d[k]=(d[k]||[]).map((r,i)=>[r[0],r[1],((S[k]||[])[i]||[])[2]])});return Object.assign({},S,d)}
 function render(){
-  const V=view(),L=LB[S.lang==="orig"?"th":S.lang]||LB.th;
+  const V=view(),L=LB[S.lang==="orig"?"th":S.lang]||LB.th,ph=S.showPhotos!==false?S.photos.slice(0,3):[],dpOn=S.dpOn!==false;
   const logos=S.brands.map(b=>{const l=logoOf(b);return l?`<img src="${l}" alt="${esc(b)}">`:`<div class="lt">${esc(b)}</div>`}).join("");
-  const ul=(k)=>(V[k]||[]).filter(r=>r[0]).length?`<ul>${V[k].filter(r=>r[0]).map(r=>`<li>${esc(r[0])}${r[1]?` <b>${esc(r[1])}</b>`:""}</li>`).join("")}</ul>`:"";
-  const tbl=(k)=>(V[k]||[]).filter(r=>r[0]).length?`<table class="st">${V[k].filter(r=>r[0]).map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("")}</table>`:"";
+  const th=r=>dpOn&&(r[2]||[]).length?`<div class="dp">${r[2].map(p=>`<img src="${p}">`).join("")}</div>`:"";
+  const ul=(k)=>(V[k]||[]).filter(r=>r[0]).length?`<ul>${V[k].filter(r=>r[0]).map(r=>`<li>${esc(r[0])}${r[1]?` <b>${esc(r[1])}</b>`:""}${th(r)}</li>`).join("")}</ul>`:"";
+  const tbl=(k)=>(V[k]||[]).filter(r=>r[0]).length?`<table class="st">${V[k].filter(r=>r[0]).map(r=>`<tr><td>${esc(r[0])}${th(r)}</td><td>${esc(r[1])}</td></tr>`).join("")}</table>`:"";
   const sec=(t,h)=>h?`<div class="h">${t}</div>${h}`:"";
   const cau=(V.cautions||[]).filter(Boolean);
   $("sheet").innerHTML=`<div class="hd"><div><div class="t1">PRODUCT</div><h2>INGREDIENT</h2><div class="t3">${esc(S.brands.join(" · "))}</div></div><div class="logos">${logos}</div></div>
   ${V.menu?`<div class="t3" style="margin-bottom:4px">${esc(V.menu)}</div>`:""}
-  <div class="pn"><div class="c">${esc(S.code)}</div><div class="n">${esc(V.nameTh)}</div><div class="e">${esc(S.nameEn)}</div></div>
-  <div class="mid"><div class="info desc">${esc(V.desc)}</div>${S.photos.length?`<div class="ph">${S.photos.map(p=>`<img src="${p}">`).join("")}</div>`:""}</div>
+  <div class="pn"><div class="pt"><div class="c">${esc(S.code)}</div><div class="n">${esc(V.nameTh)}</div><div class="e">${esc(S.nameEn)}</div></div>${ph.length?`<div class="pp">${ph.map(p=>`<img src="${p}">`).join("")}</div>`:""}</div>
+  <div class="mid"><div class="info desc">${esc(V.desc)}</div></div>
   <div class="h">${L.look}</div><ul><li>${L.allergen}: <b>${esc(V.allergen||"-")}</b></li><li>${L.halal}: ${S.halal==="YES"?"☑ YES ☐ NO":"☐ YES ☑ NO"} ${esc(S.halalNo)}</li></ul>
   ${sec(L.phys,ul("phys"))}${sec(L.store,tbl("store"))}${sec(L.recv,ul("recv"))}${sec(L.rej,ul("rej")+(V.defect.some(r=>r[0])?`<div style="font-weight:600;font-size:13px;margin:6px 0 2px">${L.total}</div>`+tbl("defect"):""))}
   ${cau.length?`<div class="warn"><b>${L.caut}</b>${cau.map(c=>`<p>${esc(c)}</p>`).join("")}</div>`:""}
@@ -200,10 +213,9 @@ function render(){
 $("cautions").oninput=e=>{S.cautions=e.target.value.split("\n");render()};
 document.querySelectorAll("[name=halal]").forEach(r=>r.onchange=()=>{S.halal=r.value;render()});
 const readImg=(f,max,cb)=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);cb(c.toDataURL(f.type==="image/png"?"image/png":"image/jpeg",.85))};im.src=fr.result};fr.readAsDataURL(f)};
-$("photos").onchange=e=>{[...e.target.files].forEach(f=>readImg(f,500,d=>{S.photos.push(d);render()}));e.target.value=""};
 function addBrand(){const n=$("newBrand").value.trim();if(!n||allBrands().includes(n))return;S.customBrands.push(n);S.brands.push(n);$("newBrand").value="";brandsUI();render()}
 $("logoFile").onchange=e=>{const f=e.target.files[0],b=$("logoFor").value;if(!f||!b)return;readImg(f,300,d=>{S.logos[b]=d;render()});e.target.value=""};
-function preset(k){const keep={lang:S.lang,brands:S.brands,customBrands:S.customBrands,logos:S.logos,photos:[]};S=Object.assign(blank(),JSON.parse(JSON.stringify(P[k])),keep);fieldsUI();listsUI();brandsUI();render()}
+function preset(k){const keep={lang:S.lang,brands:S.brands,customBrands:S.customBrands,logos:S.logos,photos:[]};S=Object.assign(blank(),JSON.parse(JSON.stringify(P[k])),keep);fieldsUI();listsUI();brandsUI();phUI();render()}
 function exportJ(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:"application/json"}));a.download=(S.code||"product")+"-ingredient.json";a.click()}
 $("imp").onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{S=Object.assign(blank(),JSON.parse(t));fieldsUI();listsUI();brandsUI();render()}catch(x){alert("ไฟล์ไม่ถูกต้อง")}});e.target.value=""};
 /* ===== แนบสเปค: ดึงข้อมูล → เลือก/แก้ไข → นำเข้า ===== */
@@ -311,8 +323,8 @@ function doImport(){
   SECS.forEach(([k,,c])=>{const its=p.lists[k].filter(i=>i.on&&i.a.trim());if(!its.length)return;
     if(k==="cautions"){const a=its.map(i=>i.a.trim());S.cautions=rep?a:S.cautions.filter(Boolean).concat(a)}
     else{const a=its.map(i=>[i.a.trim(),c===2?i.b.trim():""]);S[k]=rep?a:(S[k]||[]).concat(a)}});
-  const ph=R.imgs.filter(m=>m.on).map(m=>m.src);if(ph.length)S.photos=rep?ph:S.photos.concat(ph);
-  closeReview();fieldsUI();listsUI();render();
+  const ph=R.imgs.filter(m=>m.on).map(m=>m.src);if(ph.length)S.photos=(rep?ph:S.photos.concat(ph)).slice(0,3);
+  closeReview();fieldsUI();listsUI();phUI();render();
   if(S.lang!=="orig"&&SM)doTranslate();
 }
 /* ===== แปลอัตโนมัติ ===== */
@@ -320,7 +332,7 @@ $("viewLang").onchange=()=>{S.lang=$("viewLang").value;render()};
 async function doTranslate(){
   const lang=$("viewLang").value;S.lang=lang;
   if(lang==="orig"||!SM){render();return}
-  const src=srcKey(),payload={};TKEYS.forEach(k=>payload[k]=S[k]);
+  const src=srcKey(),payload={};TKEYS.forEach(k=>payload[k]=ROWK.includes(k)?(S[k]||[]).map(r=>[r[0],r[1]]):S[k]);
   TRBUSY=true;$("trBtn").disabled=true;$("trSt").textContent="กำลังแปลเป็น "+LANGN[lang]+"…";
   try{
     const out=await SM.json("Translate every string value in this JSON into "+LANGN[lang]+". Keep the exact same keys, structure, array lengths and order. Keep numbers, units, codes, brand names and temperatures unchanged. Use natural food-industry QC terminology. Return only the JSON.\n\n"+JSON.stringify(payload),{modelTier:"quick"});
@@ -331,7 +343,232 @@ async function doTranslate(){
   $("trBtn").disabled=!SM;
 }
 
-fieldsUI();listsUI();brandsUI();render();
+/* ===== รูปสินค้า (สูงสุด 3) / รูปตำหนิ (หลายรูป) ===== */
+const MAXP=3,MAXD=6,PHK=["rej","defect"];
+const readImgP=(f,max)=>new Promise(res=>readImg(f,max,res));
+function phUI(){
+  $("phList").innerHTML=S.photos.map((p,i)=>`<label style="margin:0;position:relative"><img src="${p}" style="width:84px;height:68px;object-fit:cover;border:1px solid var(--brd);border-radius:6px"><button class="btn x" data-phx="${i}" style="position:absolute;top:2px;right:2px;background:#fff;padding:0 5px">✕</button></label>`).join("");
+  $("phCnt").textContent=S.photos.length+"/"+MAXP;$("showPh").checked=S.showPhotos!==false;$("showDp").checked=S.dpOn!==false;
+  $("phList").querySelectorAll("[data-phx]").forEach(b=>b.onclick=e=>{e.preventDefault();S.photos.splice(+b.dataset.phx,1);phUI();render()});
+}
+$("photos").onchange=async e=>{const fs=[...e.target.files].slice(0,Math.max(0,MAXP-S.photos.length));e.target.value="";
+  for(const f of fs)S.photos.push(await readImgP(f,520));phUI();render()};
+$("showPh").onchange=e=>{S.showPhotos=e.target.checked;render()};
+$("showDp").onchange=e=>{S.dpOn=e.target.checked;render()};
+let DPT=null;
+$("dpFile").onchange=async e=>{const fs=[...e.target.files];e.target.value="";if(!DPT)return;const row=S[DPT.k][DPT.i];if(!row)return;
+  const cur=row[2]||[];for(const f of fs.slice(0,Math.max(0,MAXD-cur.length)))cur.push(await readImgP(f,480));row[2]=cur;listsUI();render()};
+function listsUI(){
+  $("lists").innerHTML=LISTS.map(([k,t,a,b])=>`<div class="sec"><b>${t}</b>${(S[k]||[]).map((r,i)=>`<div class="row"><input type="text" value="${esc(r[0])}" placeholder="${a}" data-k="${k}" data-i="${i}" data-c="0" style="flex:2">${b?`<input type="text" value="${esc(r[1])}" placeholder="${b}" data-k="${k}" data-i="${i}" data-c="1" style="flex:1">`:""}${PHK.includes(k)?`<button class="btn" data-cam="${k}:${i}" title="แนบรูปตำหนิ (หลายรูป)">📷${(r[2]||[]).length?" "+r[2].length:""}</button>`:""}<button class="btn x" data-del="${k}" data-i="${i}">✕</button></div>${PHK.includes(k)&&(r[2]||[]).length?`<div class="imgs" style="margin:0 0 6px">${r[2].map((p,j)=>`<span style="position:relative"><img src="${p}" style="width:60px;height:48px"><button class="btn x" data-dpx="${k}:${i}:${j}" style="position:absolute;top:0;right:0;background:#fff;padding:0 4px">✕</button></span>`).join("")}</div>`:""}`).join("")}<button class="btn" data-add="${k}">+ เพิ่มแถว</button></div>`).join("");
+  const L=$("lists");
+  L.querySelectorAll("input[data-k]").forEach(i=>i.oninput=()=>{S[i.dataset.k][+i.dataset.i][+i.dataset.c]=i.value;render()});
+  L.querySelectorAll("[data-del]").forEach(x=>x.onclick=()=>{S[x.dataset.del].splice(+x.dataset.i,1);listsUI();render()});
+  L.querySelectorAll("[data-add]").forEach(x=>x.onclick=()=>{S[x.dataset.add].push(["",""]);listsUI();render()});
+  L.querySelectorAll("[data-cam]").forEach(x=>x.onclick=()=>{const[k,i]=x.dataset.cam.split(":");DPT={k,i:+i};$("dpFile").click()});
+  L.querySelectorAll("[data-dpx]").forEach(x=>x.onclick=()=>{const[k,i,j]=x.dataset.dpx.split(":");S[k][+i][2].splice(+j,1);listsUI();render()});
+}
+/* ===== ส่งออกไฟล์ ===== */
+let DL=null;
+(async()=>{try{DL=(window.claude&&window.claude.use)?await window.claude.use("downloads"):null}catch(e){DL=null}})();
+const LIBS={html2canvas:"https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js",jspdf:"https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js",docx:"https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js",pptx:"https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"};
+const LCHK={html2canvas:()=>window.html2canvas,jspdf:()=>window.jspdf,docx:()=>window.docx,pptx:()=>window.PptxGenJS};
+const LP={};
+function lib(n){if(LCHK[n]())return Promise.resolve();return LP[n]||(LP[n]=new Promise((ok,no)=>{const s=document.createElement("script");s.src=LIBS[n];s.onload=()=>LCHK[n]()?ok():no(new Error("โหลดไลบรารีไม่สำเร็จ"));s.onerror=()=>{delete LP[n];no(new Error("โหลดไลบรารีไม่สำเร็จ ตรวจสอบอินเทอร์เน็ต"))};document.head.appendChild(s)}))}
+function ctx(){const V=view(),L=LB[S.lang==="orig"?"th":S.lang]||LB.th;return{V,L,photos:S.showPhotos!==false?S.photos.slice(0,MAXP):[],dp:S.dpOn!==false}}
+const baseName=()=>((S.code||"product")+"-ingredient").replace(/[^\w.\-ก-๙]+/g,"_");
+const dims=src=>new Promise(r=>{const i=new Image();i.onload=()=>r({w:i.naturalWidth,h:i.naturalHeight});i.onerror=()=>r({w:1,h:1});i.src=src});
+const u8=src=>{const b=atob(src.split(",")[1]),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a};
+const itype=src=>/image\/png/.test(src)?"png":"jpg";
+async function saveBlob(name,blob){
+  if(DL){await DL.save({filename:name,data:blob});return}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+async function snap(){
+  await lib("html2canvas");
+  const c=$("sheet").cloneNode(true);c.removeAttribute("id");c.style.cssText="position:fixed;left:-10000px;top:0;width:794px;max-width:none;box-shadow:none;margin:0";document.body.appendChild(c);
+  try{await new Promise(r=>setTimeout(r,80));
+    const top=c.getBoundingClientRect().top,marks=[...c.querySelectorAll(".h,li,tr,.warn,.pn,.dp,.hd")].map(e=>Math.round((e.getBoundingClientRect().top-top)*2)).filter(y=>y>0).sort((a,b)=>a-b);
+    const canvas=await html2canvas(c,{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false});
+    return{canvas,marks}}finally{c.remove()}
+}
+const exportPng=async()=>{const{canvas}=await snap();return new Promise(r=>canvas.toBlob(r,"image/png"))};
+async function exportPdf(){
+  const{canvas,marks}=await snap();await lib("jspdf");
+  const pdf=new window.jspdf.jsPDF({unit:"mm",format:"a4"}),pxmm=canvas.width/210,maxH=Math.floor(281*pxmm);
+  let y=0,first=true;
+  while(y<canvas.height-2){
+    let end=Math.min(canvas.height,y+maxH);
+    if(end<canvas.height){const c=marks.filter(m=>m>y+maxH*0.45&&m<=end);if(c.length)end=c[c.length-1]}
+    const h=end-y,t=document.createElement("canvas");t.width=canvas.width;t.height=h;const g=t.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,t.width,h);g.drawImage(canvas,0,y,canvas.width,h,0,0,canvas.width,h);
+    if(!first)pdf.addPage();first=false;pdf.addImage(t.toDataURL("image/jpeg",.92),"JPEG",0,8,210,h/pxmm);y=end}
+  return pdf.output("blob");
+}
+async function exportDocx(){
+  await lib("docx");const D=window.docx,{V,L,photos,dp}=ctx(),GREEN="1D6F42",F="Tahoma";
+  const nb=(()=>{const n={style:D.BorderStyle.NONE,size:0,color:"FFFFFF"};return{top:n,bottom:n,left:n,right:n}})(),lt={style:D.BorderStyle.SINGLE,size:4,color:"CCCCCC"},bd={top:lt,bottom:lt,left:lt,right:lt};
+  const run=(t,o={})=>new D.TextRun({text:String(t),font:F,size:o.size||20,bold:o.bold,color:o.color});
+  const para=(ch,o={})=>new D.Paragraph({children:Array.isArray(ch)?ch:[run(ch,o)],spacing:{after:o.after??40},alignment:o.align,indent:o.indent,shading:o.fill?{type:D.ShadingType.CLEAR,fill:o.fill,color:"auto"}:undefined});
+  const imgRun=async(src,h)=>{const d=await dims(src),s=h/d.h;return new D.ImageRun({data:u8(src),type:itype(src),transformation:{width:Math.max(1,Math.round(d.w*s)),height:h}})};
+  const gap=()=>new D.TextRun({text:"  ",font:F,size:20});
+  const imgs=async(arr,h)=>{const o=[];for(const s of arr){o.push(await imgRun(s,h));o.push(gap())}return o};
+  const W=10466;
+  const cell=(ch,w,o={})=>new D.TableCell({children:ch,width:{size:w,type:D.WidthType.DXA},borders:o.b||nb,verticalAlign:o.v||D.VerticalAlign.CENTER,shading:o.fill?{type:D.ShadingType.CLEAR,fill:o.fill,color:"auto"}:undefined,margins:{top:60,bottom:60,left:100,right:100}});
+  const tbl=(rows,cw)=>new D.Table({width:{size:W,type:D.WidthType.DXA},columnWidths:cw,rows});
+  const kids=[];
+  const logoRuns=[];for(const b of S.brands){const l=logoOf(b);if(l)logoRuns.push(await imgRun(l,56),gap());else logoRuns.push(run(b,{bold:true,color:GREEN,size:26}),gap())}
+  kids.push(tbl([new D.TableRow({children:[cell([para("PRODUCT",{size:18,color:"6B6860"}),para("INGREDIENT",{size:52,bold:true,color:GREEN,after:0}),para(S.brands.join(" · "),{size:20,color:"6B6860"})],6200),cell([para(logoRuns,{align:D.AlignmentType.RIGHT})],W-6200)]})],[6200,W-6200]));
+  kids.push(new D.Paragraph({border:{bottom:{style:D.BorderStyle.SINGLE,size:24,color:GREEN,space:1}},spacing:{after:120},children:[]}));
+  if(V.menu)kids.push(para(V.menu,{color:"6B6860"}));
+  const pl=[para(S.code,{size:18,color:"6B6860"}),para(V.nameTh,{size:34,bold:true}),para(S.nameEn,{size:18,color:"6B6860",after:0})];
+  const pr=photos.length?[para(await imgs(photos,70),{align:D.AlignmentType.RIGHT,after:0})]:[para("")];
+  kids.push(tbl([new D.TableRow({children:[cell(pl,photos.length?6000:W,{fill:"E8F3ED"}),...(photos.length?[cell(pr,W-6000,{fill:"E8F3ED"})]:[])]})],photos.length?[6000,W-6000]:[W]));
+  if(V.desc)kids.push(para(V.desc,{after:100,indent:{left:0}}));
+  const head=t=>kids.push(para(t,{bold:true,fill:"F1F0EA",after:60}));
+  const bullets=async k=>{for(const r of V[k].filter(r=>r[0])){kids.push(para([run("• "+r[0]),...(r[1]?[run(" "+r[1],{bold:true})]:[])],{indent:{left:240}}));if(dp&&(r[2]||[]).length)kids.push(para(await imgs(r[2],46),{indent:{left:480}}))}};
+  const table2=async(k)=>{const rows=[];for(const r of V[k].filter(r=>r[0])){const ch=[para(r[0])];if(dp&&(r[2]||[]).length)ch.push(para(await imgs(r[2],46)));rows.push(new D.TableRow({children:[cell(ch,8000,{b:bd}),cell([para(r[1]||"",{align:D.AlignmentType.CENTER})],W-8000,{b:bd})]}))}if(rows.length)kids.push(tbl(rows,[8000,W-8000]))};
+  head(L.look);kids.push(para([run("• "+L.allergen+": "),run(V.allergen||"-",{bold:true})],{indent:{left:240}}));kids.push(para("• "+L.halal+": "+(S.halal==="YES"?"☑ YES ☐ NO":"☐ YES ☑ NO")+(S.halalNo?" "+S.halalNo:""),{indent:{left:240}}));
+  if(V.phys.some(r=>r[0])){head(L.phys);await bullets("phys")}
+  if(V.store.some(r=>r[0])){head(L.store);await table2("store")}
+  if(V.recv.some(r=>r[0])){head(L.recv);await bullets("recv")}
+  if(V.rej.some(r=>r[0])||V.defect.some(r=>r[0])){head(L.rej);await bullets("rej");if(V.defect.some(r=>r[0])){kids.push(para(L.total,{bold:true}));await table2("defect")}}
+  const cau=V.cautions.filter(Boolean);
+  if(cau.length){kids.push(para("",{after:60}));kids.push(para(L.caut,{bold:true,fill:"FEF8EC"}));cau.forEach(c=>kids.push(para(c,{fill:"FEF8EC",size:19})))}
+  const doc=new D.Document({creator:"Product Ingredient",sections:[{properties:{page:{margin:{top:720,bottom:720,left:720,right:720}}},children:kids}]});
+  return D.Packer.toBlob(doc);
+}
+async function exportPptx(){
+  await lib("pptx");const{V,L,photos,dp}=ctx(),P=new window.PptxGenJS(),GREEN="1D6F42",F="Tahoma";P.layout="LAYOUT_WIDE";P.title="Product Ingredient";
+  const addH=async(s,title)=>{
+    s.addShape(P.ShapeType.rect,{x:0,y:0,w:13.33,h:.16,fill:{color:GREEN},line:{color:GREEN}});
+    s.addText([{text:"PRODUCT",options:{fontSize:10,color:"6B6860",breakLine:true}},{text:title,options:{fontSize:26,bold:true,color:GREEN}}],{x:.5,y:.3,w:7.6,h:.95,fontFace:F,valign:"top",margin:0});
+    let x=12.83;
+    for(const b of S.brands.slice().reverse()){const l=logoOf(b);if(l){const d=await dims(l),h=.8,w=h*d.w/d.h;x-=w;s.addImage({data:l,x,y:.3,w,h});x-=.15}else{const w=Math.max(.7,.14*b.length+.3);x-=w;s.addText(b,{x,y:.4,w,h:.55,align:"center",valign:"middle",bold:true,color:GREEN,fontFace:F,fontSize:14,line:{color:GREEN,width:1.5}});x-=.15}}
+    s.addShape(P.ShapeType.line,{x:.5,y:1.3,w:12.33,h:0,line:{color:GREEN,width:2.5}});
+  };
+  const sec=(s,t,y)=>s.addText(t,{x:.5,y,w:12.33,h:.34,fontFace:F,fontSize:13,bold:true,fill:{color:"F1F0EA"},margin:[0,6,0,6]});
+  const tbl=(s,rows,y,h)=>{if(rows.length)s.addTable(rows.map(r=>[{text:r[0]},{text:r[1]||"",options:{bold:true,align:"center"}}]),{x:.5,y,w:12.33,colW:[9.1,3.23],fontFace:F,fontSize:11,rowH:.3,border:{type:"solid",color:"CCCCCC",pt:.75},valign:"middle",autoPage:true,autoPageRepeatHeader:false,newSlideStartY:.5})};
+  // 1 สินค้า
+  let s=P.addSlide();await addH(s,"INGREDIENT");
+  if(V.menu)s.addText(V.menu,{x:.5,y:1.4,w:8,h:.3,fontFace:F,fontSize:12,color:"6B6860",margin:0});
+  s.addShape(P.ShapeType.rect,{x:.5,y:1.8,w:12.33,h:1.4,fill:{color:"E8F3ED"},line:{color:"E8F3ED"}});
+  s.addShape(P.ShapeType.rect,{x:.5,y:1.8,w:.08,h:1.4,fill:{color:GREEN},line:{color:GREEN}});
+  s.addText([{text:S.code,options:{fontSize:12,color:"6B6860",breakLine:true}},{text:V.nameTh,options:{fontSize:26,bold:true,breakLine:true}},{text:S.nameEn,options:{fontSize:12,color:"6B6860"}}],{x:.75,y:1.85,w:photos.length?8:11.8,h:1.3,fontFace:F,valign:"middle",margin:0});
+  let px=12.7;for(const p of photos.slice().reverse()){const d=await dims(p),h=1.2,w=Math.min(1.6,h*d.w/d.h);px-=w;s.addImage({data:p,x:px,y:1.9,w,h});px-=.1}
+  if(V.desc)s.addText(V.desc,{x:.5,y:3.4,w:12.33,h:1.2,fontFace:F,fontSize:15,valign:"top",margin:0});
+  sec(s,L.look,4.75);
+  s.addText([{text:L.allergen+": ",options:{}},{text:V.allergen||"-",options:{bold:true,breakLine:true}},{text:L.halal+": "+(S.halal==="YES"?"☑ YES ☐ NO":"☐ YES ☑ NO")+(S.halalNo?" "+S.halalNo:""),options:{}}],{x:.6,y:5.15,w:12,h:1,fontFace:F,fontSize:14,valign:"top",bullet:true,paraSpaceAfter:4,margin:0});
+  // 2 กายภาพ + จัดเก็บ
+  if(V.phys.some(r=>r[0])||V.store.some(r=>r[0])){s=P.addSlide();await addH(s,L.phys.length>20?"INGREDIENT":"INGREDIENT");let y=1.5;
+    const ph=V.phys.filter(r=>r[0]);if(ph.length){sec(s,L.phys,y);y+=.45;tbl(s,ph,y);y+=ph.length*.4+.3}
+    const st=V.store.filter(r=>r[0]);if(st.length){sec(s,L.store,y);y+=.45;tbl(s,st,y)}}
+  // 3 จุดรับ + ตำหนิ
+  const rc=V.recv.filter(r=>r[0]),rj=V.rej.filter(r=>r[0]),df=V.defect.filter(r=>r[0]);
+  if(rc.length||rj.length||df.length){s=P.addSlide();await addH(s,"INGREDIENT");let y=1.5;
+    if(rc.length){sec(s,L.recv,y);y+=.4;s.addText(rc.map(r=>({text:r[0],options:{bullet:true,breakLine:true}})),{x:.6,y,w:12.1,h:rc.length*.3+.1,fontFace:F,fontSize:12,valign:"top",margin:0});y+=rc.length*.3+.2}
+    if(rj.length){sec(s,L.rej,y);y+=.4;s.addText(rj.map(r=>({text:r[0],options:{bullet:true,breakLine:true}})),{x:.6,y,w:12.1,h:rj.length*.3+.1,fontFace:F,fontSize:12,valign:"top",margin:0});y+=rj.length*.3+.2}
+    if(df.length){s.addText(L.total,{x:.5,y,w:12.33,h:.3,fontFace:F,fontSize:12,bold:true,margin:0});y+=.35;tbl(s,df,y)}}
+  // 4 รูปตำหนิ
+  if(dp){const items=[...V.rej,...V.defect].filter(r=>r[0]&&(r[2]||[]).length);
+    for(let i=0;i<items.length;i+=3){s=P.addSlide();await addH(s,"INGREDIENT");let y=1.45;
+      for(const r of items.slice(i,i+3)){s.addText(r[0]+(r[1]?"  –  "+r[1]:""),{x:.5,y,w:12.33,h:.34,fontFace:F,fontSize:14,bold:true,color:"C0392B",margin:0});
+        let x=.5;for(const p of r[2].slice(0,6)){const d=await dims(p),h=1.55,w=h*d.w/d.h;s.addImage({data:p,x,y:y+.4,w,h});x+=w+.12}y+=2.05}}}
+  // 5 ข้อควรระวัง
+  const cau=V.cautions.filter(Boolean);
+  if(cau.length){s=P.addSlide();await addH(s,"INGREDIENT");s.addShape(P.ShapeType.rect,{x:.5,y:1.5,w:12.33,h:5.3,fill:{color:"FEF8EC"},line:{color:"E6C36A"}});
+    s.addText([{text:L.caut,options:{bold:true,breakLine:true}},...cau.map(c=>({text:c,options:{breakLine:true}}))],{x:.7,y:1.6,w:11.9,h:5.1,fontFace:F,fontSize:14,valign:"top",paraSpaceAfter:8,margin:0})}
+  return P.write({outputType:"blob"});
+}
+const FMTS=[["pdf","PDF","พร้อมพิมพ์ / ส่งต่อ",exportPdf],["docx","Word","แก้ไขต่อได้",exportDocx],["pptx","PowerPoint","สไลด์นำเสนอ",exportPptx],["png","รูปภาพ (PNG)","ไฟล์ภาพทั้งหน้า",exportPng]];
+async function runExport(keys,set){
+  const nm=($("rvName")&&$("rvName").value.trim())||baseName();let ok=0;
+  for(const k of keys){const f=FMTS.find(x=>x[0]===k);set(k,"กำลังสร้างไฟล์…");
+    try{const b=await f[3]();set(k,"รอยืนยันการบันทึก…");await saveBlob(nm+"."+k,b);set(k,"✔ บันทึกแล้ว");ok++}
+    catch(e){set(k,e&&e.code==="declined"?"ยกเลิกการบันทึก":"ผิดพลาด: "+((e&&e.message)||"ลองอีกครั้ง"))}}
+  return ok;
+}
+function quick(k){const st=$("dlSt");[...document.querySelectorAll("[data-q]")].forEach(b=>b.disabled=true);
+  runExport([k],(_,m)=>st.textContent=m).finally(()=>[...document.querySelectorAll("[data-q]")].forEach(b=>b.disabled=false))}
+function openReview(){
+  closeOv("ov2");const o=document.createElement("div");o.id="ov2";o.className="ov";
+  o.innerHTML=`<div class="md" role="dialog" aria-modal="true" style="max-width:980px"><div class="mdh"><b>รีวิวก่อนส่ง</b><button class="btn" data-close>ปิด</button></div>
+  <div class="mdb"><div class="rvg"><div><div class="pvw" id="pvw"></div></div><div>
+    <div class="rs" style="margin-top:0"><b>ไฟล์ที่จะส่ง (เลือกได้หลายไฟล์)</b>${FMTS.map(f=>`<label class="rr" style="margin:0 0 6px;cursor:pointer"><input type="checkbox" data-fmt="${f[0]}" ${f[0]==="pdf"?"checked":""}><span style="font-size:13px;color:var(--tx)"><b>${f[1]}</b> <span style="color:var(--tx2);font-size:11px">${f[2]}</span></span><span class="st" id="st-${f[0]}" style="margin-left:auto;font-size:11px;color:var(--tx2)"></span></label>`).join("")}</div>
+    <div class="rs"><b>ชื่อไฟล์</b><input type="text" id="rvName" value="${esc(baseName())}"></div>
+    <div class="rs"><b>ตัวเลือกในเอกสาร</b><label class="rr" style="margin:0 0 4px"><input type="checkbox" id="rvPh" ${S.showPhotos!==false?"checked":""}><span style="font-size:13px;color:var(--tx)">รูปสินค้า (มุมขวา)</span></label><label class="rr" style="margin:0"><input type="checkbox" id="rvDp" ${S.dpOn!==false?"checked":""}><span style="font-size:13px;color:var(--tx)">รูปตำหนิ</span></label></div>
+    <div class="note">ภาษาเอกสาร: ${esc({orig:"ต้นฉบับ",en:"English",th:"ไทย",zh:"中文",ja:"日本語"}[S.lang||"orig"])} · ${DL?"ระบบจะถามยืนยันการบันทึกทีละไฟล์":"ไฟล์จะถูกดาวน์โหลดทันที"}</div></div></div></div>
+  <div class="mdf"><span class="note" id="rvMsg" style="margin:0 auto 0 0"></span><button class="btn" data-close>ยกเลิก</button><button class="btn p" id="rvGo">ส่ง / ดาวน์โหลดไฟล์ที่เลือก</button></div></div>`;
+  document.body.appendChild(o);
+  const pv=()=>{const box=$("pvw");box.innerHTML="";const c=$("sheet").cloneNode(true);c.removeAttribute("id");c.style.cssText="width:794px;max-width:none;margin:0;box-shadow:none;transform-origin:top left";box.appendChild(c);const sc=Math.min(1,box.clientWidth/794);c.style.transform="scale("+sc+")";box.style.height=Math.ceil(c.offsetHeight*sc)+"px"};
+  pv();
+  const cnt=()=>{const n=o.querySelectorAll("[data-fmt]:checked").length;$("rvGo").textContent=n?`ส่ง / ดาวน์โหลด ${n} ไฟล์`:"เลือกไฟล์ก่อน";$("rvGo").disabled=!n};cnt();
+  o.querySelectorAll("[data-fmt]").forEach(x=>x.onchange=cnt);
+  $("rvPh").onchange=e=>{S.showPhotos=e.target.checked;phUI();render();pv()};$("rvDp").onchange=e=>{S.dpOn=e.target.checked;phUI();render();pv()};
+  o.querySelectorAll("[data-close]").forEach(x=>x.onclick=()=>closeOv("ov2"));
+  $("rvGo").onclick=async()=>{const keys=[...o.querySelectorAll("[data-fmt]:checked")].map(x=>x.dataset.fmt);if(!keys.length)return;
+    $("rvGo").disabled=true;keys.forEach(k=>$("st-"+k).textContent="");
+    const n=await runExport(keys,(k,m)=>{const e=$("st-"+k);if(e)e.textContent=m});
+    $("rvMsg").textContent=n?`บันทึกแล้ว ${n}/${keys.length} ไฟล์`:"ยังไม่ได้บันทึกไฟล์";$("rvGo").disabled=false;cnt()};
+}
+function closeOv(id){const o=document.getElementById(id);if(o)o.remove()}
+/* ===== คลังข้อมูล: แบรนด์ → หัวข้อ → สินค้า → ตำหนิ (+รูป) ===== */
+const LSK="pi.lib.v1",safeId=s=>String(s).replace(/[^A-Za-z0-9_\-]/g,"_");
+const Lib={kind:"local",db:null,
+  async init(){try{const d=(window.claude&&window.claude.use)?await window.claude.use("db"):null;if(d){this.db=d;this.kind="db"}}catch(e){}
+    if($("libKind"))$("libKind").textContent=this.kind==="db"?"เก็บในระบบ Claude (ใช้ร่วมกันได้ตามสิทธิ์ของลิงก์)":"เก็บในเบราว์เซอร์เครื่องนี้เท่านั้น"},
+  _l(){try{return JSON.parse(localStorage.getItem(LSK))||{}}catch(e){return{}}},
+  async list(){if(this.db)return(await this.db.collection("ingredients").get()).docs.map(d=>Object.assign({id:d.id},d.data()));const l=this._l();return Object.keys(l).map(id=>Object.assign({id},l[id].meta))},
+  async save(id,meta,json,photos){
+    if(this.db){const db=this.db;await db.doc("ingredients/"+id).set(meta);await db.doc("ingredients/"+id+"/data/main").set({json});
+      const col=db.collection("ingredients/"+id+"/photos"),old=(await col.get()).docs.map(d=>d.id);
+      for(const k of Object.keys(photos))await col.doc(k).set({src:photos[k]});
+      for(const k of old)if(!(k in photos))await col.doc(k).delete();return}
+    const l=this._l();l[id]={meta,json,photos};try{localStorage.setItem(LSK,JSON.stringify(l))}catch(e){throw new Error("พื้นที่เบราว์เซอร์เต็ม ลดจำนวนรูปแล้วลองใหม่")}},
+  async photos(id){if(this.db){const o={};(await this.db.collection("ingredients/"+id+"/photos").get()).docs.forEach(d=>o[d.id]=d.data().src);return o}return(this._l()[id]||{}).photos||{}},
+  async json(id){if(this.db){const d=await this.db.doc("ingredients/"+id+"/data/main").get();return d.exists?d.data().json:null}return(this._l()[id]||{}).json||null},
+  async remove(id){if(this.db){const db=this.db,col=db.collection("ingredients/"+id+"/photos");for(const d of(await col.get()).docs)await db.doc("ingredients/"+id+"/photos/"+d.id).delete();await db.doc("ingredients/"+id+"/data/main").delete();await db.doc("ingredients/"+id).delete();return}
+    const l=this._l();delete l[id];localStorage.setItem(LSK,JSON.stringify(l))}};
+Lib.init();
+async function saveToLib(){
+  const st=$("libSt");
+  if(!S.brands.length){st.textContent="เลือกแบรนด์อย่างน้อย 1 แบรนด์ก่อนบันทึก";return}
+  if(!S.nameTh&&!S.code){st.textContent="ใส่รหัสหรือชื่อสินค้าก่อนบันทึก";return}
+  const id=S.recId||("r"+Date.now().toString(36)),photos={},cp=JSON.parse(JSON.stringify(S));
+  S.photos.forEach((p,i)=>photos["p"+i]=p);cp.photos=[];
+  const defects=[];
+  PHK.forEach(k=>cp[k].forEach((r,i)=>{(S[k][i][2]||[]).forEach((p,j)=>photos[k+"_"+i+"_"+j]=p);cp[k][i]=[r[0],r[1]];if(r[0])defects.push([r[0],(S[k][i][2]||[]).length,k,r[1]||"",i])}));
+  delete cp.recId;
+  const meta={code:S.code||"",nameTh:S.nameTh||"",nameEn:S.nameEn||"",menu:S.menu||"",brands:S.brands.slice(),defects,photoCount:Object.keys(photos).length,updated:Date.now()};
+  st.textContent="กำลังบันทึก…";
+  try{await Lib.save(id,meta,JSON.stringify(cp),photos);S.recId=id;save();st.textContent="✔ บันทึกเข้าคลังแล้ว ("+S.brands.join(", ")+")"}
+  catch(e){st.textContent="บันทึกไม่สำเร็จ: "+((e&&e.message)||"ไม่มีสิทธิ์เขียน")}
+}
+async function openLib(){
+  closeOv("ov3");const o=document.createElement("div");o.id="ov3";o.className="ov";
+  o.innerHTML=`<div class="md" role="dialog" aria-modal="true"><div class="mdh"><b>คลังข้อมูล</b><input type="text" id="libQ" placeholder="ค้นหาแบรนด์ / หัวข้อ / สินค้า / ตำหนิ" style="max-width:300px"><button class="btn" data-close>ปิด</button></div><div class="mdb" id="libB"><p class="note">กำลังโหลด…</p></div></div>`;
+  document.body.appendChild(o);o.querySelector("[data-close]").onclick=()=>closeOv("ov3");
+  let items=[];try{items=await Lib.list()}catch(e){$("libB").innerHTML='<p class="note">โหลดคลังไม่สำเร็จ: '+esc(e.message||"")+"</p>";return}
+  const draw=()=>{
+    const q=($("libQ").value||"").toLowerCase(),match=it=>!q||[it.code,it.nameTh,it.nameEn,it.menu,...(it.brands||[]),...(it.defects||[]).map(d=>d[0])].join(" ").toLowerCase().includes(q);
+    const by={};items.filter(match).forEach(it=>(it.brands&&it.brands.length?it.brands:["ไม่ระบุแบรนด์"]).forEach(b=>{((by[b]=by[b]||{})[it.menu||"ไม่ระบุหัวข้อ"]=by[b][it.menu||"ไม่ระบุหัวข้อ"]||[]).push(it)}));
+    const order=[...allBrands(),"ไม่ระบุแบรนด์"].filter(b=>by[b]);
+    $("libB").innerHTML=order.length?order.map(b=>{const l=logoOf(b);return `<details class="lb" open><summary>${l?`<img src="${l}" style="height:22px;vertical-align:middle;margin-right:6px">`:""}<b>${esc(b)}</b> <span class="note">${Object.values(by[b]).reduce((n,a)=>n+a.length,0)} รายการ</span></summary>${Object.keys(by[b]).sort().map(m=>`<div class="lm">${esc(m)}</div>${by[b][m].map(it=>`<div class="li" data-id="${it.id}"><div class="rr" style="margin:0"><div style="flex:1;min-width:0"><b>${esc(it.code)} ${esc(it.nameTh)}</b><div class="note" style="margin:0">ตำหนิ ${(it.defects||[]).length} · รูป ${it.photoCount||0}</div></div><button class="btn" data-open="${it.id}">เปิด</button><button class="btn" data-def="${it.id}">ตำหนิ ▾</button><button class="btn x" data-rm="${it.id}">ลบ</button></div><div class="ld" id="ld-${it.id}-${esc(b).replace(/\W/g,"_")}" hidden></div></div>`).join("")}`).join("")}</details>`}).join(""):'<p class="note">ยังไม่มีข้อมูลในคลัง กด “บันทึกเข้าคลัง” ในหน้าฟอร์ม</p>';
+  };
+  draw();$("libQ").oninput=draw;
+  $("libB").onclick=async ev=>{const t=ev.target.closest("button");if(!t)return;const d=t.dataset;
+    if(d.open){const js=await Lib.json(d.open);if(!js)return;const ph=await Lib.photos(d.open),p=JSON.parse(js);
+      S=Object.assign(blank(),p,{recId:d.open,photos:[]});
+      Object.keys(ph).sort().forEach(k=>{let m;if(/^p\d+$/.test(k))S.photos.push(ph[k]);else if((m=k.match(/^(rej|defect)_(\d+)_(\d+)$/))){const r=S[m[1]][+m[2]];if(r){r[2]=r[2]||[];r[2][+m[3]]=ph[k]}}});
+      S.photos=S.photos.filter(Boolean);PHK.forEach(k=>S[k].forEach(r=>{if(r[2])r[2]=r[2].filter(Boolean)}));
+      closeOv("ov3");fieldsUI();listsUI();brandsUI();phUI();render();return}
+    if(d.def){const box=t.closest(".li").querySelector(".ld");if(!box.hidden){box.hidden=true;return}
+      const it=items.find(x=>x.id===d.def),ph=await Lib.photos(d.def);
+      box.innerHTML=(it.defects||[]).length?(it.defects||[]).map((df,i)=>{const th=Object.keys(ph).filter(k=>k.startsWith(df[2]+"_"+df[4]+"_")).sort().map(k=>`<img src="${ph[k]}">`).join("");return `<div class="ldr"><b>${esc(df[0])}</b> ${df[3]?`<span class="note">${esc(df[3])}</span>`:""}<div class="dp" style="margin-left:0">${th}</div></div>`}).join(""):'<span class="note">ไม่มีข้อมูลตำหนิ</span>';
+      box.hidden=false;return}
+    if(d.rm){if(t.dataset.sure){await Lib.remove(d.rm);items=items.filter(x=>x.id!==d.rm);if(S.recId===d.rm)delete S.recId;draw()}else{t.dataset.sure="1";t.textContent="ยืนยันลบ?"}}};
+}
+phUI();
+
+fieldsUI();listsUI();brandsUI();phUI();render();
 </script>
 </body>
 </html>
