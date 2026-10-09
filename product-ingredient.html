@@ -73,6 +73,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
 .gd{border:1px solid var(--brd);border-radius:8px;margin:8px 0;padding:0 12px;background:#fff}.gd>summary{cursor:pointer;padding:9px 0;font-weight:700;font-size:13.5px;color:var(--grn)}.gd>summary:focus-visible{outline:2px solid var(--grn);outline-offset:2px}.gd[open]>summary{border-bottom:1px solid var(--brd);margin-bottom:8px}
 .gd ol,.gd ul{padding-left:20px;margin:0 0 8px}.gd li{margin:3px 0;font-size:13px}.gd p{font-size:13px;margin:0 0 8px}.gd table{width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 10px}.gd td,.gd th{border:1px solid var(--brd);padding:4px 8px;text-align:left;vertical-align:top}.gd th{background:#f1f0ea}
 .gq{background:var(--grn2);border-left:5px solid var(--grn);border-radius:6px;padding:10px 14px;margin:6px 0 4px}.gq ol{padding-left:20px;margin:4px 0 0}.gq li{margin:3px 0;font-size:13.5px}
+.lbar{padding:8px 16px;border-bottom:1px solid var(--brd);display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12.5px;min-height:46px}.lbar label{display:flex;gap:6px;align-items:center;margin:0;color:var(--tx);font-size:12.5px}.lbar .msg{flex:1;min-width:140px}.lsel{width:17px;height:17px;flex-shrink:0}.btn.del{color:var(--red);border-color:#e8b9b3;font-weight:700}.btn.del.sure{background:var(--red);color:#fff;border-color:var(--red)}
 .stale{display:inline-block;background:#fef8ec;border:1px solid #e6c36a;border-radius:10px;padding:0 8px;font-size:11px;margin-left:6px}
 .pn{display:flex;gap:16px;align-items:center;justify-content:space-between}.pn .pt{flex:1;min-width:0}.pn .pp{display:flex;gap:6px;flex-shrink:0}.pn .pp img{width:128px;height:104px;object-fit:cover;border-radius:4px;border:1px solid #cfe3d7;background:#fff}
 .dp{display:flex;gap:4px;flex-wrap:wrap;margin:2px 0 4px 10px}.dp img{width:56px;height:46px;object-fit:cover;border:1px solid var(--brd);border-radius:3px}
@@ -136,7 +137,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
   </div>
   <div id="lists"></div>
   <div class="sec"><b>คลังข้อมูล (แบรนด์ → หัวข้อ → ตำหนิ)</b>
-    <div class="bar" style="margin-top:0"><button class="btn p" onclick="saveToLib()">💾 บันทึกเข้าคลัง</button><button class="btn" onclick="openLib()">📚 เปิดคลัง</button></div>
+    <div class="bar" style="margin-top:0"><button class="btn p" onclick="saveToLib()">💾 บันทึกเข้าคลัง</button><button class="btn" onclick="openLib()">📚 เปิดคลัง</button><button class="btn del" id="delCur" onclick="deleteCurrent()" disabled>🗑 ลบรายการนี้ออกจากคลัง</button></div>
     <div class="note" id="libSt"></div><div class="note" id="libKind"></div>
   </div>
   <div class="sec"><b>ดาวน์โหลด / ส่ง</b>
@@ -235,6 +236,7 @@ function render(){
   $("sheet").lang=S.lang==="orig"?"th":S.lang;
   const vl=$("viewLang");if(vl)vl.value=S.lang||"orig";
   if(typeof thUI==="function")thUI();
+  if(typeof libDelUI==="function")libDelUI();
   const tr=S.tr&&S.tr[S.lang];if($("trSt")&&!TRBUSY)$("trSt").innerHTML=S.lang==="orig"?"แสดงข้อความต้นฉบับ":(!tr?"ยังไม่ได้แปล กด “แปลอัตโนมัติ”":(tr.src!==srcKey()?'ข้อมูลต้นฉบับเปลี่ยนแล้ว <span class="stale">กดแปลใหม่</span>':"แปลอัตโนมัติแล้ว ตรวจทานก่อนใช้งาน"));
   save();
 }
@@ -657,6 +659,15 @@ async function resetLogo(){
   brandsUI();render();logoResetUI();
   logoMsg(had?(BUILTIN_LOGOS[b]||b==="TPC"?"ใช้โลโก้เดิมของระบบสำหรับ "+b+" แล้ว":"ลบโลโก้ของ "+b+" แล้ว (จะแสดงเป็นชื่อแบรนด์)"):"แบรนด์นี้ยังไม่มีโลโก้ที่อัปโหลดเอง")}
 function logoResetUI(){const b=$("logoFor")&&$("logoFor").value,btn=$("logoReset");if(btn)btn.disabled=!b||!(SHARED[b]||(S.logos&&S.logos[b]))}
+function libDelUI(){const b=$("delCur");if(!b)return;b.disabled=!S.recId;if(!S.recId){b.classList.remove("sure");b.textContent="🗑 ลบรายการนี้ออกจากคลัง"}}
+async function deleteCurrent(){
+  const b=$("delCur"),st=$("libSt");if(!S.recId)return;
+  if(!b.dataset.sure){b.dataset.sure="1";b.classList.add("sure");b.textContent="ยืนยันลบ “"+(S.nameTh||S.code||"รายการนี้")+"”?";
+    b._tm=setTimeout(()=>{delete b.dataset.sure;b.classList.remove("sure");libDelUI()},4000);return}
+  clearTimeout(b._tm);delete b.dataset.sure;b.disabled=true;st.textContent="กำลังลบ…";
+  try{await Lib.remove(S.recId);delete S.recId;save();st.textContent="ลบรายการนี้ออกจากคลังแล้ว (ข้อมูลในฟอร์มยังอยู่ กด “＋ สินค้าใหม่” เพื่อเริ่มใหม่)"}
+  catch(e){st.textContent="ลบไม่สำเร็จ: "+((e&&e.message)||"ไม่มีสิทธิ์แก้ไขลิงก์นี้");}
+  libDelUI()}
 async function saveToLib(){
   const st=$("libSt");
   if(!S.brands.length){st.textContent="เลือกแบรนด์อย่างน้อย 1 แบรนด์ก่อนบันทึก";return}
@@ -668,21 +679,36 @@ async function saveToLib(){
   delete cp.recId;
   const meta={code:S.code||"",nameTh:S.nameTh||"",nameEn:S.nameEn||"",menu:S.menu||"",brands:S.brands.slice(),defects,photoCount:Object.keys(photos).length,updated:Date.now()};
   st.textContent="กำลังบันทึก…";
-  try{await Lib.save(id,meta,JSON.stringify(cp),photos);S.recId=id;save();st.textContent="✔ บันทึกเข้าคลังแล้ว ("+S.brands.join(", ")+")"}
+  try{await Lib.save(id,meta,JSON.stringify(cp),photos);S.recId=id;save();libDelUI();st.textContent="✔ บันทึกเข้าคลังแล้ว ("+S.brands.join(", ")+")"}
   catch(e){st.textContent="บันทึกไม่สำเร็จ: "+((e&&e.message)||"ไม่มีสิทธิ์เขียน")}
 }
 async function openLib(){
   closeOv("ov3");const o=document.createElement("div");o.id="ov3";o.className="ov";
-  o.innerHTML=`<div class="md" role="dialog" aria-modal="true"><div class="mdh"><b>คลังข้อมูล</b><input type="text" id="libQ" placeholder="ค้นหาแบรนด์ / หัวข้อ / สินค้า / ตำหนิ" style="max-width:300px"><button class="btn" data-close>ปิด</button></div><div class="mdb" id="libB"><p class="note">กำลังโหลด…</p></div></div>`;
+  o.innerHTML=`<div class="md" role="dialog" aria-modal="true"><div class="mdh"><b>คลังข้อมูล</b><input type="text" id="libQ" placeholder="ค้นหาแบรนด์ / หัวข้อ / สินค้า / ตำหนิ" style="max-width:300px"><button class="btn" data-close>ปิด</button></div><div class="lbar" id="libBar"><label><input type="checkbox" id="libAll"> เลือกทั้งหมดที่แสดง</label><button class="btn del" id="libDelSel" hidden>🗑 ลบที่เลือก</button><span class="msg note" id="libMsg" role="status" style="margin:0"></span></div><div class="mdb" id="libB"><p class="note">กำลังโหลด…</p></div></div>`;
   document.body.appendChild(o);o.querySelector("[data-close]").onclick=()=>closeOv("ov3");
   let items=[];try{items=await Lib.list()}catch(e){$("libB").innerHTML='<p class="note">โหลดคลังไม่สำเร็จ: '+esc(e.message||"")+"</p>";return}
+  const SEL=new Set();const vis=()=>{const q=($("libQ").value||"").toLowerCase();return items.filter(it=>!q||[it.code,it.nameTh,it.nameEn,it.menu,...(it.brands||[]),...(it.defects||[]).map(d=>d[0])].join(" ").toLowerCase().includes(q))};
+  const bar=()=>{const n=SEL.size,b=$("libDelSel");b.hidden=!n;b.textContent="🗑 ลบที่เลือก ("+n+")";const v=vis();$("libAll").checked=v.length>0&&v.every(x=>SEL.has(x.id))};
   const draw=()=>{
     const q=($("libQ").value||"").toLowerCase(),match=it=>!q||[it.code,it.nameTh,it.nameEn,it.menu,...(it.brands||[]),...(it.defects||[]).map(d=>d[0])].join(" ").toLowerCase().includes(q);
     const by={};items.filter(match).forEach(it=>(it.brands&&it.brands.length?it.brands:["ไม่ระบุแบรนด์"]).forEach(b=>{((by[b]=by[b]||{})[it.menu||"ไม่ระบุหัวข้อ"]=by[b][it.menu||"ไม่ระบุหัวข้อ"]||[]).push(it)}));
     const order=[...allBrands(),"ไม่ระบุแบรนด์"].filter(b=>by[b]);
-    $("libB").innerHTML=order.length?order.map(b=>{const l=logoOf(b);return `<details class="lb" open><summary>${l?`<img src="${l}" style="height:22px;vertical-align:middle;margin-right:6px">`:""}<b>${esc(b)}</b> <span class="note">${Object.values(by[b]).reduce((n,a)=>n+a.length,0)} รายการ</span></summary>${Object.keys(by[b]).sort().map(m=>`<div class="lm">${esc(m)}</div>${by[b][m].map(it=>`<div class="li" data-id="${it.id}"><div class="rr" style="margin:0"><div style="flex:1;min-width:0"><b>${esc(it.code)} ${esc(it.nameTh)}</b><div class="note" style="margin:0">ตำหนิ ${(it.defects||[]).length} · รูป ${it.photoCount||0}</div></div><button class="btn" data-open="${it.id}">เปิด</button><button class="btn" data-def="${it.id}">ตำหนิ ▾</button><button class="btn x" data-rm="${it.id}">ลบ</button></div><div class="ld" id="ld-${it.id}-${esc(b).replace(/\W/g,"_")}" hidden></div></div>`).join("")}`).join("")}</details>`}).join(""):'<p class="note">ยังไม่มีข้อมูลในคลัง กด “บันทึกเข้าคลัง” ในหน้าฟอร์ม</p>';
+    $("libB").innerHTML=order.length?order.map(b=>{const l=logoOf(b);return `<details class="lb" open><summary>${l?`<img src="${l}" style="height:22px;vertical-align:middle;margin-right:6px">`:""}<b>${esc(b)}</b> <span class="note">${Object.values(by[b]).reduce((n,a)=>n+a.length,0)} รายการ</span></summary>${Object.keys(by[b]).sort().map(m=>`<div class="lm">${esc(m)}</div>${by[b][m].map(it=>`<div class="li" data-id="${it.id}"><div class="rr" style="margin:0"><input type="checkbox" class="lsel" data-sel="${it.id}" ${SEL.has(it.id)?"checked":""} aria-label="เลือกรายการนี้"><div style="flex:1;min-width:0"><b>${esc(it.code)} ${esc(it.nameTh)}</b><div class="note" style="margin:0">ตำหนิ ${(it.defects||[]).length} · รูป ${it.photoCount||0}</div></div><button class="btn" data-open="${it.id}">เปิด</button><button class="btn" data-def="${it.id}">ตำหนิ ▾</button><button class="btn del" data-rm="${it.id}">🗑 ลบ</button></div><div class="ld" id="ld-${it.id}-${esc(b).replace(/\W/g,"_")}" hidden></div></div>`).join("")}`).join("")}</details>`}).join(""):'<p class="note">ยังไม่มีข้อมูลในคลัง กด “บันทึกเข้าคลัง” ในหน้าฟอร์ม</p>';
   };
-  draw();$("libQ").oninput=draw;
+  draw();bar();$("libQ").oninput=()=>{draw();bar()};
+  const msg=(m,bad)=>{const e=$("libMsg");e.textContent=m;e.style.color=bad?"var(--red)":"var(--grn)"};
+  $("libAll").onchange=e=>{vis().forEach(x=>e.target.checked?SEL.add(x.id):SEL.delete(x.id));draw();bar()};
+  $("libB").addEventListener("change",e=>{const id=e.target.dataset&&e.target.dataset.sel;if(!id)return;e.target.checked?SEL.add(id):SEL.delete(id);bar()});
+  const removeMany=async ids=>{let ok=0,fail=[];
+    for(let i=0;i<ids.length;i++){msg("กำลังลบ "+(i+1)+"/"+ids.length+"…");
+      try{await Lib.remove(ids[i]);ok++;items=items.filter(x=>x.id!==ids[i]);SEL.delete(ids[i]);if(S.recId===ids[i]){delete S.recId;libDelUI()}}catch(e){fail.push(ids[i])}}
+    draw();bar();
+    if(fail.length)msg("ลบแล้ว "+ok+" รายการ · ลบไม่สำเร็จ "+fail.length+" รายการ (ไม่มีสิทธิ์แก้ไขลิงก์นี้ หรือเครือข่ายขัดข้อง)",true);else msg("ลบแล้ว "+ok+" รายการ")};
+  $("libDelSel").onclick=()=>{const n=SEL.size;if(!n)return;const bar2=$("libBar");
+    bar2.insertAdjacentHTML("beforeend",`<span id="libAsk" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b>ลบ ${n} รายการถาวร?</b><button class="btn del sure" data-y>ยืนยันลบ</button><button class="btn" data-n>ยกเลิก</button></span>`);
+    $("libDelSel").hidden=true;
+    $("libAsk").querySelector("[data-n]").onclick=()=>{$("libAsk").remove();bar()};
+    $("libAsk").querySelector("[data-y]").onclick=async()=>{const ids=[...SEL];$("libAsk").remove();await removeMany(ids)}};
   $("libB").onclick=async ev=>{const t=ev.target.closest("button");if(!t)return;const d=t.dataset;
     if(d.open){const js=await Lib.json(d.open);if(!js)return;const ph=await Lib.photos(d.open),p=JSON.parse(js);
       S=Object.assign(blank(),p,{recId:d.open,photos:[]});
@@ -693,7 +719,10 @@ async function openLib(){
       const it=items.find(x=>x.id===d.def),ph=await Lib.photos(d.def);
       box.innerHTML=(it.defects||[]).length?(it.defects||[]).map((df,i)=>{const th=Object.keys(ph).filter(k=>k.startsWith(df[2]+"_"+df[4]+"_")).sort().map(k=>`<img src="${ph[k]}">`).join("");return `<div class="ldr"><b>${esc(df[0])}</b> ${df[3]?`<span class="note">${esc(df[3])}</span>`:""}<div class="dp" style="margin-left:0">${th}</div></div>`}).join(""):'<span class="note">ไม่มีข้อมูลตำหนิ</span>';
       box.hidden=false;return}
-    if(d.rm){if(t.dataset.sure){await Lib.remove(d.rm);items=items.filter(x=>x.id!==d.rm);if(S.recId===d.rm)delete S.recId;draw()}else{t.dataset.sure="1";t.textContent="ยืนยันลบ?"}}};
+    if(d.rm){const it=items.find(x=>x.id===d.rm);
+      if(t.dataset.sure){clearTimeout(t._tm);await removeMany([d.rm]);return}
+      t.dataset.sure="1";t.classList.add("sure");t.textContent="ยืนยันลบ “"+((it&&(it.nameTh||it.code))||"")+"”?";
+      t._tm=setTimeout(()=>{if(t.isConnected){delete t.dataset.sure;t.classList.remove("sure");t.textContent="🗑 ลบ"}},4000)}};
 }
 phUI();
 
@@ -821,6 +850,7 @@ function openGuide(){
   <details class="gd"><summary>7. คลังข้อมูล (แบรนด์ → หัวข้อ → สินค้า → ตำหนิ)</summary>
    <ol><li>ติ๊กแบรนด์อย่างน้อย 1 แบรนด์ ใส่รหัสหรือชื่อสินค้า แล้วกด “💾 บันทึกเข้าคลัง”</li>
    <li>กด “📚 รายการที่บันทึกไว้” เพื่อค้นหา “เปิด” กลับมาแก้ไข ดูตำหนิพร้อมรูปด้วย “ตำหนิ ▾” หรือ “ลบ” (กดสองครั้งเพื่อยืนยัน)</li>
+   <li><b>ลบรายงานที่ไม่ต้องการ:</b> ในคลังกด “🗑 ลบ” ที่รายการ (กดซ้ำเพื่อยืนยัน) หรือติ๊กหลายรายการแล้วกด “🗑 ลบที่เลือก” ถ้าเปิดรายการนั้นอยู่ในฟอร์ม กด “🗑 ลบรายการนี้ออกจากคลัง” ที่กล่องคลังข้อมูลได้เลย ลบแล้วกู้คืนไม่ได้</li>
    <li>เปิดสินค้าจากคลังแล้วบันทึกซ้ำ = อัปเดตรายการเดิม ถ้าจะเก็บเป็นสินค้าใหม่ให้กด “＋ สินค้าใหม่” ก่อน</li></ol>
    <p>บนลิงก์ Claude คลังใช้ร่วมกันได้ตามสิทธิ์ของลิงก์ การบันทึกต้องมีสิทธิ์แก้ไข ส่วนไฟล์ HTML ในรีโปเก็บในเบราว์เซอร์เครื่องนั้นเท่านั้น</p></details>
   <details class="gd"><summary>8. ปัญหาที่พบบ่อย</summary>
