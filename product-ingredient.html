@@ -89,7 +89,8 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
 <div class="app">
 <div class="panel">
   <h1>📋 Product Ingredient</h1>
-  <div class="bar" style="margin:0 0 8px"><button class="btn p" onclick="newItem()">＋ สินค้าใหม่</button><button class="btn" onclick="openLib()">📚 รายการที่บันทึกไว้</button><button class="btn gb" onclick="openGuide()">📖 คู่มือการใช้งาน</button></div>
+  <div class="bar" style="margin:0 0 8px"><button class="btn p" onclick="newItem()">＋ สินค้าใหม่</button><button class="btn" onclick="openLib()">📚 รายการที่บันทึกไว้</button><button class="btn gb" onclick="openGuide()">📖 คู่มือการใช้งาน</button><button class="btn" id="adminBtn" onclick="openAdmin()" hidden>👥 การใช้งานของผู้ใช้</button></div>
+  <div class="note" style="margin:0 0 8px"><span id="cloudChip">กำลังเชื่อมต่อ…</span> <span title="ระบบบันทึกเวลาเข้าใช้และการทำงาน เพื่อให้ผู้ดูแลตรวจสอบ">· 🛈 ระบบบันทึกเวลาเข้าใช้และการทำงานให้ผู้ดูแลตรวจสอบ</span></div>
   <div class="gbn" id="gdBanner" hidden><span>ใช้งานครั้งแรก? อ่านคู่มือสั้นๆ ก่อนเริ่ม</span><button class="btn p" onclick="openGuide()">เปิดคู่มือ</button><button class="btn x" onclick="hideGuideBanner()" aria-label="ปิดข้อความนี้">✕</button></div>
   <div class="sec"><b>แบรนด์ (เลือกได้หลายแบรนด์)</b>
     <div class="brands" id="brands"></div>
@@ -137,7 +138,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
   </div>
   <div id="lists"></div>
   <div class="sec"><b>คลังข้อมูล (แบรนด์ → หัวข้อ → ตำหนิ)</b>
-    <div class="bar" style="margin-top:0"><button class="btn p" onclick="saveToLib()">💾 บันทึกเข้าคลัง</button><button class="btn" onclick="openLib()">📚 เปิดคลัง</button><button class="btn del" id="delCur" onclick="deleteCurrent()" disabled>🗑 ลบรายการนี้ออกจากคลัง</button></div>
+    <div class="bar" style="margin-top:0"><button class="btn p" onclick="saveToLib()">💾 บันทึกเข้าคลัง</button><button class="btn" onclick="openLib()">📚 เปิดคลัง</button><button class="btn del" id="delCur" onclick="deleteCurrent()" disabled>🗑 ลบรายการนี้ออกจากคลัง</button><label class="note" style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="libAuto" checked> บันทึกลงคลังอัตโนมัติ</label></div>
     <div class="note" id="libSt"></div><div class="note" id="libKind"></div>
   </div>
   <div class="sec"><b>ดาวน์โหลด / ส่ง</b>
@@ -195,7 +196,7 @@ const $=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"]/g,c
 const allBrands=()=>{const a=[...DEF_BRANDS];[...(S.customBrands||[]),...Object.keys(SHARED)].forEach(b=>{if(!a.includes(b))a.push(b)});return a};
 const SHARED={};
 const logoOf=b=>(S.logos&&S.logos[b])||SHARED[b]||(b==="TPC"?TPC_LOGO:(BUILTIN_LOGOS[b]||""));
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(window.__cloud)window.__cloud.touch()}
 function brandsUI(){
   const cur=$("logoFor").value;$("logoFor").innerHTML=allBrands().map(b=>`<option${b===cur?" selected":""}>${esc(b)}</option>`).join("");if(typeof logoResetUI==="function")logoResetUI();
   $("brands").innerHTML=allBrands().map(b=>`<label class="chip ${S.brands.includes(b)?"on":""}"><input type="checkbox" ${S.brands.includes(b)?"checked":""} data-b="${esc(b)}">${logoOf(b)?`<img src="${logoOf(b)}" alt="" style="height:16px;max-width:34px;object-fit:contain">`:""}${esc(b)}</label>`).join("");
@@ -741,7 +742,7 @@ function newItem(){
 function closeOv(id){const o=document.getElementById(id);if(o)o.remove()}
 /* ===== คลังข้อมูล: แบรนด์ → หัวข้อ → สินค้า → ตำหนิ (+รูป) ===== */
 const LSK="pi.lib.v1",safeId=s=>String(s).replace(/[^A-Za-z0-9_\-]/g,"_");
-const Lib={kind:"local",db:null,
+const Lib={kind:"local",db:null,_sg:{},
   async init(){try{const d=(window.claude&&window.claude.use)?await window.claude.use("db"):null;if(d){this.db=d;this.kind="db"}}catch(e){}
     if($("libKind"))$("libKind").textContent=this.kind==="db"?"เก็บในระบบ Claude (ใช้ร่วมกันได้ตามสิทธิ์ของลิงก์)":"เก็บในเบราว์เซอร์เครื่องนี้เท่านั้น"},
   _l(){try{return JSON.parse(localStorage.getItem(LSK))||{}}catch(e){return{}}},
@@ -749,8 +750,8 @@ const Lib={kind:"local",db:null,
   async save(id,meta,json,photos){
     if(this.db){const db=this.db;await db.doc("ingredients/"+id).set(meta);await db.doc("ingredients/"+id+"/data/main").set({json});
       const col=db.collection("ingredients/"+id+"/photos"),old=(await col.get()).docs.map(d=>d.id);
-      for(const k of Object.keys(photos))await col.doc(k).set({src:photos[k]});
-      for(const k of old)if(!(k in photos))await col.doc(k).delete();return}
+      const sg=this._sg[id]||(this._sg[id]={});for(const k of Object.keys(photos)){const sig=photos[k].length+photos[k].slice(-48);if(sg[k]===sig)continue;await col.doc(k).set({src:photos[k]});sg[k]=sig}
+      for(const k of old)if(!(k in photos)){await col.doc(k).delete();delete sg[k]}return}
     const l=this._l();l[id]={meta,json,photos};try{localStorage.setItem(LSK,JSON.stringify(l))}catch(e){throw new Error("พื้นที่เบราว์เซอร์เต็ม ลดจำนวนรูปแล้วลองใหม่")}},
   async photos(id){if(this.db){const o={};(await this.db.collection("ingredients/"+id+"/photos").get()).docs.forEach(d=>o[d.id]=d.data().src);return o}return(this._l()[id]||{}).photos||{}},
   async json(id){if(this.db){const d=await this.db.doc("ingredients/"+id+"/data/main").get();return d.exists?d.data().json:null}return(this._l()[id]||{}).json||null},
@@ -790,18 +791,27 @@ async function deleteCurrent(){
   try{await Lib.remove(S.recId);delete S.recId;save();st.textContent="ลบรายการนี้ออกจากคลังแล้ว (ข้อมูลในฟอร์มยังอยู่ กด “＋ สินค้าใหม่” เพื่อเริ่มใหม่)"}
   catch(e){st.textContent="ลบไม่สำเร็จ: "+((e&&e.message)||"ไม่มีสิทธิ์แก้ไขลิงก์นี้");}
   libDelUI()}
+function packS(){
+  const photos={},cp=JSON.parse(JSON.stringify(S)),defects=[];
+  S.photos.forEach((p,i)=>photos["p"+i]=p);cp.photos=[];
+  PHK.forEach(k=>cp[k].forEach((r,i)=>{(S[k][i][2]||[]).forEach((p,j)=>photos[k+"_"+i+"_"+j]=p);cp[k][i]=[r[0],r[1]];if(r[0]&&(k==="rej"||k==="defect"))defects.push([r[0],(S[k][i][2]||[]).length,k,r[1]||"",i])}));
+  return{cp,photos,defects};
+}
+function restoreS(js,ph,extra){
+  const p=JSON.parse(js);S=Object.assign(blank(),p,extra||{},{photos:[]});
+  Object.keys(ph).sort().forEach(k=>{let m;if(/^p\d+$/.test(k))S.photos.push(ph[k]);else if((m=k.match(/^(phys|store|recv|rej|defect)_(\d+)_(\d+)$/))){const r=S[m[1]][+m[2]];if(r){r[2]=r[2]||[];r[2][+m[3]]=ph[k]}}});
+  S.photos=S.photos.filter(Boolean);PHK.forEach(k=>S[k].forEach(r=>{if(r[2])r[2]=r[2].filter(Boolean)}));
+  fieldsUI();listsUI();brandsUI();phUI();render();
+}
 async function saveToLib(){
   const st=$("libSt");
   if(!S.brands.length){st.textContent="เลือกแบรนด์อย่างน้อย 1 แบรนด์ก่อนบันทึก";return}
   if(!S.nameTh&&!S.code){st.textContent="ใส่รหัสหรือชื่อสินค้าก่อนบันทึก";return}
-  const id=S.recId||("r"+Date.now().toString(36)),photos={},cp=JSON.parse(JSON.stringify(S));
-  S.photos.forEach((p,i)=>photos["p"+i]=p);cp.photos=[];
-  const defects=[];
-  PHK.forEach(k=>cp[k].forEach((r,i)=>{(S[k][i][2]||[]).forEach((p,j)=>photos[k+"_"+i+"_"+j]=p);cp[k][i]=[r[0],r[1]];if(r[0]&&(k==="rej"||k==="defect"))defects.push([r[0],(S[k][i][2]||[]).length,k,r[1]||"",i])}));
-  delete cp.recId;
-  const meta={code:S.code||"",nameTh:S.nameTh||"",nameEn:S.nameEn||"",menu:S.menu||"",brands:S.brands.slice(),defects,photoCount:Object.keys(photos).length,updated:Date.now()};
+  const id=S.recId||("r"+Date.now().toString(36)),pk=packS(),photos=pk.photos,cp=pk.cp,defects=pk.defects;
+  delete cp.recId;delete cp.recUpd;
+  const meta={code:S.code||"",nameTh:S.nameTh||"",nameEn:S.nameEn||"",menu:S.menu||"",brands:S.brands.slice(),defects,photoCount:Object.keys(photos).length,updated:Date.now(),editor:(window.__cloud&&window.__cloud.uid)||""};
   st.textContent="กำลังบันทึก…";
-  try{await Lib.save(id,meta,JSON.stringify(cp),photos);S.recId=id;save();libDelUI();st.textContent="✔ บันทึกเข้าคลังแล้ว ("+S.brands.join(", ")+")"}
+  try{await Lib.save(id,meta,JSON.stringify(cp),photos);S.recId=id;S.recUpd=meta.updated;save();libDelUI();st.textContent="✔ บันทึกเข้าคลังแล้ว ("+S.brands.join(", ")+")";if(window.__cloud&&!window.__cloud.auto)window.__cloud.track("save",{code:S.code,name:S.nameTh,brands:S.brands})}
   catch(e){st.textContent="บันทึกไม่สำเร็จ: "+((e&&e.message)||"ไม่มีสิทธิ์เขียน")}
 }
 async function openLib(){
@@ -832,11 +842,9 @@ async function openLib(){
     $("libAsk").querySelector("[data-n]").onclick=()=>{$("libAsk").remove();bar()};
     $("libAsk").querySelector("[data-y]").onclick=async()=>{const ids=[...SEL];$("libAsk").remove();await removeMany(ids)}};
   $("libB").onclick=async ev=>{const t=ev.target.closest("button");if(!t)return;const d=t.dataset;
-    if(d.open){const js=await Lib.json(d.open);if(!js)return;const ph=await Lib.photos(d.open),p=JSON.parse(js);
-      S=Object.assign(blank(),p,{recId:d.open,photos:[]});
-      Object.keys(ph).sort().forEach(k=>{let m;if(/^p\d+$/.test(k))S.photos.push(ph[k]);else if((m=k.match(/^(phys|store|recv|rej|defect)_(\d+)_(\d+)$/))){const r=S[m[1]][+m[2]];if(r){r[2]=r[2]||[];r[2][+m[3]]=ph[k]}}});
-      S.photos=S.photos.filter(Boolean);PHK.forEach(k=>S[k].forEach(r=>{if(r[2])r[2]=r[2].filter(Boolean)}));
-      closeOv("ov3");fieldsUI();listsUI();brandsUI();phUI();render();return}
+    if(d.open){const js=await Lib.json(d.open);if(!js)return;const ph=await Lib.photos(d.open),it=items.find(x=>x.id===d.open)||{};
+      restoreS(js,ph,{recId:d.open,recUpd:it.updated||0});closeOv("ov3");save();
+      if(window.__cloud)window.__cloud.track("open-item",{code:it.code,name:it.nameTh});return}
     if(d.def){const box=t.closest(".li").querySelector(".ld");if(!box.hidden){box.hidden=true;return}
       const it=items.find(x=>x.id===d.def),ph=await Lib.photos(d.def);
       box.innerHTML=(it.defects||[]).length?(it.defects||[]).map((df,i)=>{const th=Object.keys(ph).filter(k=>k.startsWith(df[2]+"_"+df[4]+"_")).sort().map(k=>`<img src="${ph[k]}">`).join("");return `<div class="ldr"><b>${esc(df[0])}</b> ${df[3]?`<span class="note">${esc(df[3])}</span>`:""}<div class="dp" style="margin-left:0">${th}</div></div>`}).join(""):'<span class="note">ไม่มีข้อมูลตำหนิ</span>';
@@ -846,6 +854,130 @@ async function openLib(){
       t.dataset.sure="1";t.classList.add("sure");t.textContent="ยืนยันลบ “"+((it&&(it.nameTh||it.code))||"")+"”?";
       t._tm=setTimeout(()=>{if(t.isConnected){delete t.dataset.sure;t.classList.remove("sure");t.textContent="🗑 ลบ"}},4000)}};
 }
+/* ===== หลายเครื่อง · บันทึกอัตโนมัติ · บันทึกการใช้งาน (ผู้ดูแลคนเดียว = เจ้าของลิงก์) ===== */
+const Cloud=window.__cloud={uid:null,user:null,me:null,owner:false,db:null,on:false,libAuto:true,sum:{counts:{}},lastBeat:0,tD:null,tL:null,lastH:"",lastLibH:"",sig:{},busy:false,
+  hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return String(h)},
+  chip(t,c){const e=$("cloudChip");if(e){e.textContent=t;e.style.color=c||""}},
+  async init(){
+    try{this.user=(window.claude&&window.claude.use)?await window.claude.use("user"):null}catch(e){}
+    try{if(this.user){this.me=await this.user.me();this.uid=this.me.id;this.owner=await this.user.isOwner()}}catch(e){}
+    this.db=Lib.db;this.on=!!(this.db&&this.uid);
+    try{this.libAuto=localStorage.getItem("pi.libauto")!=="0"}catch(e){}
+    const cb=$("libAuto");if(cb){cb.checked=this.libAuto;cb.onchange=()=>{this.libAuto=cb.checked;try{localStorage.setItem("pi.libauto",cb.checked?"1":"0")}catch(e){}if(cb.checked)this.touch()}}
+    const ab=$("adminBtn");if(ab)ab.hidden=!(this.on&&this.owner);
+    if(!this.on){this.chip(this.db?"ไม่พบข้อมูลผู้ใช้ — บันทึกเฉพาะเครื่องนี้ (ให้เจ้าของลิงก์เชิญเป็น Contributor เพื่อใช้หลายเครื่อง)":"บันทึกเฉพาะในเบราว์เซอร์เครื่องนี้","var(--mut,#777)");return}
+    this.chip("☁ "+(this.me.name||"ผู้ใช้")+" · เชื่อมต่อแล้ว");
+    try{const d=await this.db.doc("usage/"+this.uid).get();if(d.exists)this.sum=Object.assign({counts:{}},d.data());this.sum.counts=this.sum.counts||{}}catch(e){}
+    this.track("open",{ua:/Mobile|Android|iPhone/i.test(navigator.userAgent)?"mobile":"desktop"});
+    this.prune();this.checkDraft();
+  },
+  async prune(){try{const cut=Date.now()-90*864e5,q=await this.db.collection("usage/"+this.uid+"/events").where("t","<",cut).limit(200).get();for(const d of q.docs)await this.db.doc("usage/"+this.uid+"/events/"+d.id).delete()}catch(e){}},
+  async track(a,d,quiet){
+    if(!this.on)return;const now=Date.now();
+    this.sum.counts[a]=(this.sum.counts[a]||0)+1;this.sum.lastSeen=now;this.sum.lastAction=a;
+    try{
+      if(!quiet)await this.db.doc("usage/"+this.uid+"/events/"+now.toString(36)+Math.random().toString(36).slice(2,6)).set({t:now,a,d:d||{}});
+      await this.db.doc("usage/"+this.uid).set(this.sum);this.lastBeat=now;
+    }catch(e){}
+  },
+  /* เรียกทุกครั้งที่ข้อมูลเปลี่ยน */
+  touch(){
+    if(!this.on)return;
+    if(Date.now()-this.lastBeat>18e4){this.lastBeat=Date.now();this.sum.lastSeen=this.lastBeat;this.db.doc("usage/"+this.uid).set(this.sum).catch(()=>{})}
+    clearTimeout(this.tD);this.tD=setTimeout(()=>this.saveDraft(),2000);
+    if(this.libAuto&&S.recId){clearTimeout(this.tL);this.tL=setTimeout(()=>this.saveLib(),4000)}
+  },
+  async saveDraft(){
+    if(!this.on||this.busy)return;
+    const pk=packS(),js=JSON.stringify(pk.cp),h=this.hash(js+Object.keys(pk.photos).map(k=>k+pk.photos[k].length).join());
+    if(h===this.lastH)return;this.busy=true;this.chip("☁ กำลังบันทึกอัตโนมัติ…");
+    try{
+      const base="data/users/"+this.uid,t=Date.now(),col=this.db.collection(base+"/draft_photos");
+      for(const k of Object.keys(pk.photos)){const sg=pk.photos[k].length+pk.photos[k].slice(-48);if(this.sig[k]===sg)continue;await col.doc(k).set({src:pk.photos[k]});this.sig[k]=sg}
+      for(const k of Object.keys(this.sig))if(!(k in pk.photos)){await col.doc(k).delete();delete this.sig[k]}
+      await this.db.doc(base+"/draft").set({json:js,t,h});
+      this.lastH=h;try{localStorage.setItem("pi.dt",String(t))}catch(e){}
+      this.chip("☁ บันทึกอัตโนมัติ "+new Date(t).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));
+    }catch(e){this.chip("☁ บันทึกอัตโนมัติไม่สำเร็จ ("+((e&&e.message)||"ไม่มีสิทธิ์")+")","var(--red,#c00)")}
+    this.busy=false;
+  },
+  async saveLib(){
+    if(!this.on||!S.recId||!S.brands.length||(!S.nameTh&&!S.code))return;
+    const st=$("libSt"),pk=packS(),h=this.hash(JSON.stringify(pk.cp)+Object.keys(pk.photos).map(k=>k+pk.photos[k].length).join());
+    if(h===this.lastLibH)return;
+    try{
+      const cur=await this.db.doc("ingredients/"+S.recId).get();
+      if(cur.exists&&(cur.data().updated||0)>(S.recUpd||0)){
+        const who=cur.data().editor&&cur.data().editor!==this.uid?((await this.user.profiles([cur.data().editor]))[cur.data().editor]||{}).name||"ผู้ใช้อื่น":"อีกเครื่องหนึ่ง";
+        st.textContent="⚠ รายการนี้ถูกแก้โดย "+who+" เมื่อ "+new Date(cur.data().updated).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"})+" — บันทึกอัตโนมัติหยุดไว้ก่อน กด “บันทึกเข้าคลัง” เพื่อทับ หรือเปิดรายการใหม่จากคลัง";
+        this.track("conflict",{id:S.recId},true);this.lastLibH=h;return}
+    }catch(e){}
+    this.auto=true;try{await saveToLib()}finally{this.auto=false}
+    if($("libSt").textContent.startsWith("✔")){this.lastLibH=h;$("libSt").textContent="✔ บันทึกอัตโนมัติเข้าคลังแล้ว "+new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});this.sum.counts.autosave=(this.sum.counts.autosave||0)+1}
+  },
+  async checkDraft(){
+    try{
+      const d=await this.db.doc("data/users/"+this.uid+"/draft").get();if(!d.exists)return;const v=d.data();
+      let mine="";try{mine=localStorage.getItem("pi.dt")||""}catch(e){}
+      const pk=packS();const curH=this.hash(JSON.stringify(pk.cp)+Object.keys(pk.photos).map(k=>k+pk.photos[k].length).join());
+      if(String(v.t)===mine||v.h===curH){this.lastH=v.h;return}
+      const bn=document.createElement("div");bn.className="gbn";bn.id="draftBanner";
+      bn.innerHTML='<span>พบฉบับร่างล่าสุดจากอีกเครื่อง ('+esc(new Date(v.t).toLocaleString("th-TH"))+')</span><button class="btn p" data-y>โหลดฉบับร่าง</button><button class="btn" data-n>ข้าม</button>';
+      const ref=$("gdBanner");ref.parentNode.insertBefore(bn,ref);
+      bn.querySelector("[data-n]").onclick=()=>{try{localStorage.setItem("pi.dt",String(v.t))}catch(e){}bn.remove()};
+      bn.querySelector("[data-y]").onclick=async()=>{
+        bn.querySelector("span").textContent="กำลังโหลด…";
+        try{const ph={};(await this.db.collection("data/users/"+this.uid+"/draft_photos").get()).docs.forEach(x=>ph[x.id]=x.data().src);
+          const js=JSON.parse(v.json),extra={};restoreS(v.json,ph,extra);this.lastH=v.h;try{localStorage.setItem("pi.dt",String(v.t))}catch(e){}save();bn.remove();this.track("restore-draft",{})}
+        catch(e){bn.querySelector("span").textContent="โหลดไม่สำเร็จ"}};
+    }catch(e){}
+  }
+};
+/* ครอบฟังก์ชันเดิมเพื่อบันทึกการใช้งาน */
+(function(){
+  const w=(name,fn)=>{const o=window[name];if(typeof o!=="function")return;window[name]=fn(o)};
+  w("newItem",o=>function(){const r=o.apply(this,arguments);Cloud.lastH="";Cloud.track("new");return r});
+  w("openGuide",o=>function(){Cloud.track("guide",null,true);return o.apply(this,arguments)});
+  w("doTranslate",o=>async function(){const r=await o.apply(this,arguments);Cloud.track("translate",{lang:S.lang});return r});
+  w("handleSpecFiles",o=>async function(f){const names=[...(f||[])].map(x=>x.name).slice(0,5);const r=await o.apply(this,arguments);Cloud.track("import-spec",{files:names});return r});
+  w("runExport",o=>async function(keys){const n=($("rvName")&&$("rvName").value.trim())||"";const r=await o.apply(this,arguments);Cloud.track("export",{fmt:keys,file:n,code:S.code,brands:S.brands});return r});
+  w("setLogo",o=>async function(n,s,u){const r=await o.apply(this,arguments);if(u)Cloud.track("logo",{brand:n});return r});
+  const lr=Lib.remove.bind(Lib);Lib.remove=async function(id){let m={};try{if(Lib.db){const d=await Lib.db.doc("ingredients/"+id).get();if(d.exists)m={code:d.data().code,name:d.data().nameTh}}}catch(e){}await lr(id);Cloud.track("delete",m)};
+})();
+/* ===== แดชบอร์ดผู้ดูแล (เจ้าของลิงก์เท่านั้น) ===== */
+const ACT={open:"เข้าใช้งาน",new:"สินค้าใหม่",save:"บันทึกเข้าคลัง",autosave:"บันทึกอัตโนมัติ","open-item":"เปิดรายการ",delete:"ลบรายการ","import-spec":"แนบสเปค",translate:"แปลภาษา",export:"ดาวน์โหลด",logo:"เปลี่ยนโลโก้",guide:"เปิดคู่มือ",conflict:"ชนกันของการแก้ไข","restore-draft":"โหลดฉบับร่าง"};
+async function openAdmin(){
+  if(!Cloud.on||!Cloud.owner)return;closeOv("ov6");
+  const o=document.createElement("div");o.id="ov6";o.className="ov";
+  o.innerHTML=`<div class="md" role="dialog" aria-modal="true" style="max-width:900px"><div class="mdh"><b>👥 การใช้งานของผู้ใช้ (เฉพาะผู้ดูแล)</b><input type="text" id="admQ" placeholder="ค้นหาชื่อ / อีเมล" style="max-width:220px"><select id="admR"><option value="1">วันนี้</option><option value="7">7 วัน</option><option value="30" selected>30 วัน</option><option value="0">ทั้งหมด</option></select><button class="btn" id="admRf">↻</button><button class="btn" id="admCsv">⬇ CSV</button><button class="btn" data-close>ปิด</button></div><div class="mdb" id="admB"><p class="note">กำลังโหลด…</p></div></div>`;
+  document.body.appendChild(o);o.querySelector("[data-close]").onclick=()=>closeOv("ov6");
+  let users=[],prof={};
+  const load=async()=>{
+    try{users=(await Cloud.db.collection("usage").get()).docs.map(d=>Object.assign({id:d.id},d.data()));prof=await Cloud.user.profiles(users.map(u=>u.id))}
+    catch(e){$("admB").innerHTML='<p class="note">โหลดไม่สำเร็จ: '+esc((e&&e.message)||"")+"</p>";return}
+    draw()};
+  const nm=u=>(prof[u.id]&&prof[u.id].name)||"ผู้ใช้ไม่ระบุชื่อ",em=u=>(prof[u.id]&&prof[u.id].email)||"";
+  const fmt=t=>t?new Date(t).toLocaleString("th-TH",{dateStyle:"short",timeStyle:"short"}):"-";
+  const draw=()=>{
+    const q=($("admQ").value||"").toLowerCase(),days=+$("admR").value,cut=days?Date.now()-days*864e5:0;
+    const list=users.filter(u=>(!q||(nm(u)+" "+em(u)).toLowerCase().includes(q))&&(u.lastSeen||0)>=cut).sort((a,b)=>(b.lastSeen||0)-(a.lastSeen||0));
+    $("admB").innerHTML=list.length?`<table class="adm" style="width:100%;border-collapse:collapse;font-size:13px"><tr><th align=left>ผู้ใช้</th><th align=left>ล่าสุด</th><th align=left>สรุปการใช้งาน</th><th></th></tr>${list.map(u=>`<tr style="border-top:1px solid #ddd"><td><b>${esc(nm(u))}</b>${u.id===Cloud.uid?" (คุณ)":""}<div class="note" style="margin:0">${esc(em(u))}</div></td><td>${Date.now()-(u.lastSeen||0)<3e5?'<span style="color:#1d6f42">● ออนไลน์</span><br>':""}${esc(fmt(u.lastSeen))}</td><td>${Object.keys(u.counts||{}).map(k=>esc(ACT[k]||k)+" "+u.counts[k]).join(" · ")}</td><td><button class="btn" data-u="${esc(u.id)}">ประวัติ ▾</button></td></tr><tr hidden id="adm-${esc(u.id)}"><td colspan="4"></td></tr>`).join("")}</table>`:'<p class="note">ยังไม่มีผู้ใช้ในช่วงเวลานี้</p>'};
+  const events=async id=>{const days=+$("admR").value,cut=days?Date.now()-days*864e5:0;let q=Cloud.db.collection("usage/"+id+"/events");if(cut)q=q.where("t",">=",cut);return(await q.orderBy("t","desc").limit(500).get()).docs.map(d=>d.data())};
+  const det=e=>{const d=e.d||{};return [d.code,d.name,d.file,d.brand,(d.brands||[]).join("/"),(d.fmt||[]).join("/"),(d.files||[]).join(", "),d.lang,d.ua].filter(Boolean).join(" · ")};
+  $("admQ").oninput=draw;$("admR").onchange=draw;$("admRf").onclick=load;
+  $("admB").onclick=async ev=>{const b=ev.target.closest("[data-u]");if(!b)return;const row=$("adm-"+b.dataset.u);
+    if(!row.hidden){row.hidden=true;return}row.hidden=false;const c=row.firstChild;c.textContent="กำลังโหลด…";
+    try{const ev2=await events(b.dataset.u);c.innerHTML=ev2.length?`<div style="max-height:260px;overflow:auto;font-size:12px">${ev2.map(e=>`<div style="padding:2px 0;border-bottom:1px dashed #ddd">${esc(fmt(e.t))} — <b>${esc(ACT[e.a]||e.a)}</b> ${esc(det(e))}</div>`).join("")}</div>`:'<span class="note">ไม่มีรายการ</span>'}
+    catch(e){c.textContent="โหลดไม่สำเร็จ"}};
+  $("admCsv").onclick=async()=>{
+    const rows=[["ชื่อ","อีเมล","เวลา","การกระทำ","รายละเอียด"]];
+    try{for(const u of users){for(const e of await events(u.id))rows.push([nm(u),em(u),new Date(e.t).toISOString(),ACT[e.a]||e.a,det(e)])}
+      const csv="﻿"+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join("\r\n");
+      await saveBlob("usage-"+new Date().toISOString().slice(0,10)+".csv",new Blob([csv],{type:"text/csv"}))}catch(e){}};
+  load();
+}
+Cloud.ready=Lib.init().then(()=>Cloud.init()).catch(()=>{});
+
 phUI();
 
 /* ===== ธีมสีตามโลโก้แบรนด์ ===== */
@@ -976,7 +1108,13 @@ function openGuide(){
    <li><b>ลบรายงานที่ไม่ต้องการ:</b> ในคลังกด “🗑 ลบ” ที่รายการ (กดซ้ำเพื่อยืนยัน) หรือติ๊กหลายรายการแล้วกด “🗑 ลบที่เลือก” ถ้าเปิดรายการนั้นอยู่ในฟอร์ม กด “🗑 ลบรายการนี้ออกจากคลัง” ที่กล่องคลังข้อมูลได้เลย ลบแล้วกู้คืนไม่ได้</li>
    <li>เปิดสินค้าจากคลังแล้วบันทึกซ้ำ = อัปเดตรายการเดิม ถ้าจะเก็บเป็นสินค้าใหม่ให้กด “＋ สินค้าใหม่” ก่อน</li></ol>
    <p>บนลิงก์ Claude คลังใช้ร่วมกันได้ตามสิทธิ์ของลิงก์ การบันทึกต้องมีสิทธิ์แก้ไข ส่วนไฟล์ HTML ในรีโปเก็บในเบราว์เซอร์เครื่องนั้นเท่านั้น</p></details>
-  <details class="gd"><summary>8. ปัญหาที่พบบ่อย</summary>
+  <details class="gd"><summary>8. ใช้หลายเครื่อง · บันทึกอัตโนมัติ · ผู้ดูแล</summary>
+   <ol><li><b>หลายเครื่อง/หลายคน:</b> ส่งลิงก์ให้ผู้ใช้ แล้วให้เจ้าของลิงก์ตั้งค่า “แชร์” ให้ผู้ใช้เป็น Contributor ขึ้นไป (หรือทั้งองค์กร) ผู้ใช้ต้องลงชื่อเข้าใช้ Claude</li>
+   <li><b>บันทึกอัตโนมัติ:</b> ทุกครั้งที่แก้ไข ระบบเก็บ “ฉบับร่างส่วนตัว” ของคุณไว้ในระบบ (เห็นเฉพาะคุณ) เปิดจากเครื่องอื่นจะมีแถบถามให้โหลดฉบับร่างล่าสุด และถ้าเปิดรายการจากคลังอยู่ ระบบจะอัปเดตรายการในคลังให้เอง (ปิดได้ที่ช่อง “บันทึกลงคลังอัตโนมัติ”)</li>
+   <li><b>แก้ชนกัน:</b> ถ้าอีกคนแก้รายการเดียวกันไปก่อน ระบบจะไม่เขียนทับ ให้กด “บันทึกเข้าคลัง” เพื่อทับ หรือเปิดรายการใหม่</li>
+   <li><b>ผู้ดูแล (เจ้าของลิงก์คนเดียว):</b> มีปุ่ม “👥 การใช้งานของผู้ใช้” แสดงชื่อ อีเมล เวลาเข้าใช้ล่าสุด และสิ่งที่ทำ (เข้าใช้ บันทึก ลบ ดาวน์โหลด แนบสเปค แปลภาษา) ส่งออก CSV ได้ ผู้ใช้อื่นมองไม่เห็นข้อมูลนี้</li>
+   <li><b>ความเป็นส่วนตัว:</b> ระบบบันทึกเวลาเข้าใช้และการทำงาน (ไม่เก็บเนื้อหาสเปคทั้งหมด) เก็บ 90 วัน</li></ol></details>
+  <details class="gd"><summary>9. ปัญหาที่พบบ่อย</summary>
    <table><tr><th>อาการ</th><th>สาเหตุ / วิธีแก้</th></tr>
    <tr><td>แนบสเปคไม่ได้ / อ่านภาพไม่ได้</td><td>ภาพ เอกสารสแกน และ .doc เก่าต้องเปิดผ่านลิงก์ Claude และกดอนุญาตให้ Claude อ่าน ไฟล์ HEIC/TIFF ให้บันทึกเป็น JPG ก่อน ภาพที่เบลอหรือเอียงมากอ่านได้ไม่ครบ ลองถ่ายใหม่หรือกด “วางข้อความ”</td></tr>
    <tr><td>นำเข้าแล้วไม่พบสินค้า</td><td>บรรทัดสินค้าต้องขึ้นต้นด้วยรหัสตัวเลข 5 หลักขึ้นไป แก้ข้อความในหน้าต่างแล้วกด “ลองอีกครั้ง”</td></tr>
