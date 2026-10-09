@@ -24,6 +24,7 @@ body{font-family:Sarabun,"Noto Sans Thai",Tahoma,sans-serif;background:var(--bg)
 .hm-card[data-go=new]{background:var(--grn);border-color:var(--grn)}.hm-card[data-go=new] b,.hm-card[data-go=new] small{color:#fff}.hm-card[data-go=new] .ic{background:rgba(255,255,255,.2);color:#fff}
 .hm-sec{background:#fff;border:1px solid var(--brd);border-radius:16px;padding:14px 16px;margin-bottom:14px}.hm-sec[hidden]{display:none}
 .hm-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.hm-h b{font-size:15px}
+.hm-help{font-size:13px;color:var(--tx2);margin:-2px 0 10px}.hm-lbl{font-size:12px;font-weight:700;color:var(--tx);margin-bottom:4px}.hm-lbl span{font-weight:400;color:var(--tx2)}.hm-chips .chip.on{background:var(--grn);color:#fff;border-color:var(--grn)}.hm-more{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12.5px;color:var(--tx2)}.hm-more a{color:var(--grn);cursor:pointer;text-decoration:underline}
 .hm-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px}.hm-chips .chip{flex:0 0 auto}
 .hm-it{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--brd)}.hm-it:first-child{border-top:0}
 .hm-it img{height:26px;max-width:64px;object-fit:contain}.hm-it .nm{flex:1;min-width:0}.hm-it .nm b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hm-it .nm span{font-size:12px;color:var(--tx2)}
@@ -140,7 +141,9 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
     </div>
     <div class="hm-sec" id="hmCont" hidden></div>
     <div class="hm-sec">
-      <div class="hm-h"><b>ล่าสุดในคลัง</b><span class="note" id="hmCnt" style="margin:0"></span></div>
+      <div class="hm-h"><b>📚 รายการที่บันทึกไว้ล่าสุด</b><span class="note" id="hmCnt" style="margin:0"></span></div>
+      <p class="hm-help">สินค้าที่ทุกคนบันทึกเข้าคลังไว้แล้ว เรียงจากแก้ไขล่าสุด กด “เปิด” เพื่อแก้ต่อ หรือ “คัดลอก” เพื่อทำเป็นรายการใหม่</p>
+      <div class="hm-lbl">กรองตามแบรนด์ <span>(กดซ้ำเพื่อยกเลิก)</span></div>
       <div class="hm-chips" id="hmBr"></div>
       <div id="hmRecent"><div class="hm-skel"></div><div class="hm-skel"></div><div class="hm-skel"></div></div>
     </div>
@@ -1087,13 +1090,15 @@ async function renderHome(){
   let items=[];try{items=HOME_ITEMS=await Lib.list()}catch(e){items=[]}
   const f=HF.brand?items.filter(x=>(x.brands||[]).includes(HF.brand)):items;
   f.sort((a,b)=>(b.updated||0)-(a.updated||0));
-  $("hmCnt").textContent=items.length?"ทั้งหมด "+items.length+" รายการ":"";
+  $("hmCnt").textContent=items.length?"ในคลังทั้งหมด "+items.length+" รายการ":"";
   const names={};try{if(C.user&&C.on){const ids=[...new Set(f.slice(0,5).map(x=>x.editor).filter(Boolean))];if(ids.length){const ps=await C.user.profiles(ids);ids.forEach(i=>names[i]=ps[i]&&ps[i].name)}}}catch(e){}
   $("hmRecent").innerHTML=!items.length?`<div class="hm-empty"><b>เริ่มต้นง่ายๆ 3 ขั้นตอน</b><div class="hm-steps"><div><b>1 · เลือกแบรนด์</b>โลโก้และสีขึ้นเอง</div><div><b>2 · แนบสเปคหรือกรอก</b>ติ๊กเลือกข้อมูลที่ใช้</div><div><b>3 · บันทึกและส่งออก</b>PDF · Word · PowerPoint</div></div><button class="btn p" data-go="new">เริ่มเลย</button></div>`
-   :!f.length?'<p class="note">ไม่พบรายการของแบรนด์นี้</p>'
-   :f.slice(0,5).map(it=>{const l=logoOf((it.brands||[])[0]);return `<div class="hm-it">${l?`<img src="${l}" alt="">`:""}<div class="nm"><b>${esc(it.code||"")} ${esc(it.nameTh||"")}</b><span>${esc((it.brands||[]).join(", "))} · แก้ล่าสุด ${esc(ago(it.updated))}${names[it.editor]?" โดย "+esc(names[it.editor]):""}</span></div><button class="btn p" data-open="${esc(it.id)}">เปิด</button><button class="btn" data-copy="${esc(it.id)}" title="คัดลอกเป็นรายการใหม่">⧉ คัดลอก</button></div>`}).join("")}
+   :!f.length?`<div class="hm-empty"><p>ยังไม่มีรายการของ <b>${esc(HF.brand)}</b> ในคลัง</p><div class="bar" style="justify-content:center"><button class="btn p" data-newb="${esc(HF.brand)}">＋ สร้างรายการของ ${esc(HF.brand)}</button><button class="btn" data-clearf>ล้างตัวกรอง</button></div></div>`
+   :f.slice(0,5).map(it=>{const l=logoOf((it.brands||[])[0]);return `<div class="hm-it">${l?`<img src="${l}" alt="">`:""}<div class="nm"><b>${esc(it.code||"")} ${esc(it.nameTh||"")}</b><span>${esc((it.brands||[]).join(", "))} · แก้ล่าสุด ${esc(ago(it.updated))}${names[it.editor]?" โดย "+esc(names[it.editor]):""}</span></div><button class="btn p" data-open="${esc(it.id)}">เปิด</button><button class="btn" data-copy="${esc(it.id)}" title="คัดลอกเป็นรายการใหม่">⧉ คัดลอก</button></div>`}).join("")+(f.length>5||items.length>5?`<div class="hm-more"><span>แสดง 5 รายการล่าสุด</span><a data-go="lib">ดูทั้งหมดในคลัง →</a></div>`:"")}
 $("home").addEventListener("click",async ev=>{
   const ch=ev.target.closest(".chip[data-b]");if(ch){HF.brand=HF.brand===ch.dataset.b?"":ch.dataset.b;renderHome();return}
+  if(ev.target.closest("[data-clearf]")){HF.brand="";renderHome();return}
+  const nb=ev.target.closest("[data-newb]");if(nb){const b=nb.dataset.newb;newItem();if(!S.brands.includes(b))S.brands=[b];brandsUI();render();save();enterForm();return}
   const o=ev.target.closest("[data-open]");if(o){await openItem(o.dataset.open,false);return}
   const c=ev.target.closest("[data-copy]");if(c){await openItem(c.dataset.copy,true);return}
   const b=ev.target.closest("[data-go]");if(!b)return;const go=b.dataset.go;
