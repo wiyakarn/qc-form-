@@ -33,10 +33,11 @@ body{font-family:Sarabun,"Noto Sans Thai",Tahoma,sans-serif;background:var(--bg)
 .hm-ft{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}.hm-ft .btn{padding:9px 14px;font-size:13.5px}.hm-ft [data-go=form]{margin-left:auto}
 @media(max-width:900px){.hm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hm-hd h2{font-size:24px}.hm-hd{padding-top:24px}.hm-card{min-height:118px}}
 @media print{#home{display:none!important}}
-.panel h1{font-size:16px;margin-bottom:10px;cursor:pointer}
+.panel h1{font-size:16px;margin-bottom:10px}
 .panel h1{margin-bottom:8px}
 .tb{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:0;z-index:20;background:var(--sur);margin:0 -14px 8px;padding:8px 14px;border-bottom:1px solid var(--brd);box-shadow:0 2px 6px rgba(0,0,0,.05)}
 .tb .btn{padding:7px 11px;font-size:13px;min-height:34px}.tb .mob{display:none}
+.cl{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px;color:var(--tx2);margin:0 0 8px}.cl #cloudChip{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cl a{color:var(--tx2);cursor:pointer;text-decoration:underline;text-underline-offset:2px;flex:0 0 auto}
 .jump{display:flex;gap:4px 10px;flex-wrap:wrap;align-items:center;font-size:12px;margin:0 0 8px;color:var(--tx2)}
 .jump a{color:var(--grn);cursor:pointer;text-decoration:underline;text-underline-offset:2px}.jump a[data-all]{margin-left:auto;color:var(--tx2)}.jump a[data-all]+a[data-all]{margin-left:0}
 .sec>b{cursor:pointer;display:flex!important;justify-content:space-between;align-items:center;font-size:13px!important;padding:2px 0;margin-bottom:6px;user-select:none}
@@ -165,8 +166,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
     <button class="btn gb" onclick="openGuide()" title="คู่มือการใช้งาน">📖 คู่มือ</button>
     <button class="btn" id="adminBtn" onclick="openAdmin()" hidden>👥 ผู้ใช้</button>
   </div>
-  <div class="jump" id="jump"><span>ไปที่:</span><a data-j="แบรนด์">แบรนด์</a><a data-j="แนบสเปค">สเปค</a><a data-j="ข้อมูลสินค้า">สินค้า</a><a data-j="__lists">รายการ</a><a data-j="ดาวน์โหลด">ส่งออก</a><a data-all="0">ย่อทั้งหมด</a><a data-all="1">ขยายทั้งหมด</a></div>
-  <div class="note" style="margin:0 0 8px"><span id="cloudChip">กำลังเชื่อมต่อ…</span> <span title="ระบบบันทึกเวลาเข้าใช้และการทำงาน เพื่อให้ผู้ดูแลตรวจสอบ">· 🛈 ระบบบันทึกเวลาเข้าใช้และการทำงานให้ผู้ดูแลตรวจสอบ</span></div>
+  <div class="cl"><span id="cloudChip">กำลังเชื่อมต่อ…</span><a id="allToggle" role="button" tabindex="0">ย่อทั้งหมด</a></div>
   <div class="gbn" id="gdBanner" hidden><span>ใช้งานครั้งแรก? อ่านคู่มือสั้นๆ ก่อนเริ่ม</span><button class="btn p" onclick="openGuide()">เปิดคู่มือ</button><button class="btn x" onclick="hideGuideBanner()" aria-label="ปิดข้อความนี้">✕</button></div>
   <div class="sec"><b>แบรนด์ (เลือกได้หลายแบรนด์)</b>
     <div class="brands" id="brands"></div>
@@ -216,12 +216,11 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
     <div class="bar"><button class="btn" onclick="resetTheme()">↻ ดึงสีจากโลโก้ใหม่</button></div>
   </div>
   <div class="sec"><b>คลังข้อมูล (แบรนด์ → หัวข้อ → ตำหนิ)</b>
-    <div class="bar" style="margin-top:0"><button class="btn p" onclick="saveToLib()">💾 บันทึกเข้าคลัง</button><button class="btn" onclick="openLib()">📚 เปิดคลัง</button><button class="btn del" id="delCur" onclick="deleteCurrent()" disabled>🗑 ลบรายการนี้ออกจากคลัง</button><label class="note" style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="libAuto" checked> บันทึกลงคลังอัตโนมัติ</label></div>
-    <div class="note" id="libSt"></div><div class="note" id="libKind"></div>
+    <div class="bar" style="margin-top:0"><button class="btn del" id="delCur" onclick="deleteCurrent()" disabled>🗑 ลบรายการนี้ออกจากคลัง</button><label class="note" style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="libAuto" checked> บันทึกลงคลังอัตโนมัติ</label></div>
+    <div class="note" id="libSt"></div><div class="note" id="libKind" hidden></div>
   </div>
   <div class="sec"><b>ดาวน์โหลด / ส่ง</b>
     <div class="bar" style="margin-top:0"><button class="btn" data-q onclick="quick('pdf')">⬇ PDF</button><button class="btn" data-q onclick="quick('docx')">⬇ Word</button><button class="btn" data-q onclick="quick('pptx')">⬇ PowerPoint</button><button class="btn" data-q onclick="quick('png')">⬇ รูปภาพ</button></div>
-    <div class="bar"><button class="btn p" onclick="openReview()">👁 รีวิวก่อนส่ง (เลือกหลายไฟล์)</button></div>
     <div class="note" id="dlSt"></div>
   </div>
   <div class="sec"><b>ข้อควรระวัง (หนึ่งข้อต่อบรรทัด)</b><textarea id="cautions" style="min-height:110px"></textarea></div>
@@ -945,7 +944,7 @@ async function openLib(){
 /* ===== หลายเครื่อง · บันทึกอัตโนมัติ · บันทึกการใช้งาน (ผู้ดูแลคนเดียว = เจ้าของลิงก์) ===== */
 const Cloud=window.__cloud={uid:null,user:null,me:null,owner:false,db:null,on:false,libAuto:true,sum:{counts:{}},lastBeat:0,tD:null,tL:null,lastH:"",lastLibH:"",sig:{},busy:false,
   hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return String(h)},
-  chip(t,c){const e=$("cloudChip");if(e){e.textContent=t;e.style.color=c||""}},
+  chip(t,c,d){const e=$("cloudChip");if(e){e.textContent=t;e.style.color=c||"";e.title=(d||"")+(d?"\n":"")+"ระบบบันทึกเวลาเข้าใช้และการทำงาน เพื่อให้ผู้ดูแลตรวจสอบ"}},
   async init(){
     try{this.user=(window.claude&&window.claude.use)?await window.claude.use("user"):null}catch(e){}
     try{if(this.user){this.me=await this.user.me();this.uid=this.me.id;this.owner=await this.user.isOwner()}}catch(e){}
@@ -980,13 +979,13 @@ const Cloud=window.__cloud={uid:null,user:null,me:null,owner:false,db:null,on:fa
     const pk=packS(),js=JSON.stringify(pk.cp),h=this.hash(js+Object.keys(pk.photos).map(k=>k+pk.photos[k].length).join());
     if(h===this.lastH)return;this.busy=true;this.chip("☁ กำลังบันทึกอัตโนมัติ…");
     try{
-      const base="data/users/"+this.uid,t=Date.now(),col=this.db.collection(base+"/draft_photos");
+      const base="data/users/"+this.uid,t=Date.now(),col=this.db.collection(base+"/draft/photos");
       for(const k of Object.keys(pk.photos)){const sg=pk.photos[k].length+pk.photos[k].slice(-48);if(this.sig[k]===sg)continue;await col.doc(k).set({src:pk.photos[k]});this.sig[k]=sg}
       for(const k of Object.keys(this.sig))if(!(k in pk.photos)){await col.doc(k).delete();delete this.sig[k]}
       await this.db.doc(base+"/draft").set({json:js,t,h});
       this.lastH=h;try{localStorage.setItem("pi.dt",String(t))}catch(e){}
       this.chip("☁ บันทึกอัตโนมัติ "+new Date(t).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}));
-    }catch(e){this.chip("☁ บันทึกอัตโนมัติไม่สำเร็จ ("+((e&&e.message)||"ไม่มีสิทธิ์")+")","var(--red,#c00)")}
+    }catch(e){this.chip("☁ บันทึกอัตโนมัติไม่สำเร็จ","var(--red,#c00)",(e&&e.message)||"ไม่มีสิทธิ์")}
     this.busy=false;
   },
   async saveLib(){
@@ -1015,7 +1014,7 @@ const Cloud=window.__cloud={uid:null,user:null,me:null,owner:false,db:null,on:fa
       bn.querySelector("[data-n]").onclick=()=>{try{localStorage.setItem("pi.dt",String(v.t))}catch(e){}bn.remove()};
       bn.querySelector("[data-y]").onclick=async()=>{
         bn.querySelector("span").textContent="กำลังโหลด…";
-        try{const ph={};(await this.db.collection("data/users/"+this.uid+"/draft_photos").get()).docs.forEach(x=>ph[x.id]=x.data().src);
+        try{const ph={};(await this.db.collection("data/users/"+this.uid+"/draft/photos").get()).docs.forEach(x=>ph[x.id]=x.data().src);
           const js=JSON.parse(v.json),extra={};restoreS(v.json,ph,extra);this.lastH=v.h;try{localStorage.setItem("pi.dt",String(v.t))}catch(e){}save();bn.remove();this.track("restore-draft",{})}
         catch(e){bn.querySelector("span").textContent="โหลดไม่สำเร็จ"}};
     }catch(e){}
@@ -1106,7 +1105,6 @@ $("home").addEventListener("click",async ev=>{
   else if(go==="guide")openGuide();
   else if(go==="admin")openAdmin()});
 $("home").addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){const l=ev.target.closest&&ev.target.closest(".chip[data-b]");if(l){ev.preventDefault();l.click()}}});
-document.querySelector(".panel h1").addEventListener("click",showHome);
 (function(){let v="home";try{v=sessionStorage.getItem("pi.view")||"home"}catch(e){}v==="form"?enterForm():showHome();
   if(window.__cloud&&window.__cloud.ready)window.__cloud.ready.then(()=>{if(!$("home").hidden)renderHome()});
   Lib.init().then(()=>Lib.loadLogos()).then(()=>{if(!$("home").hidden)renderHome()}).catch(()=>{})})();
@@ -1116,15 +1114,13 @@ document.querySelector(".panel h1").addEventListener("click",showHome);
 const SHUT_DEF=["สี / เอกลักษณ์ของแบรนด์","ภาษา / แปลอัตโนมัติ","คลังข้อมูล (แบรนด์ → หัวข้อ → ตำหนิ)","ข้อควรระวัง (หนึ่งข้อต่อบรรทัด)","ตัวอย่างข้อมูล / จัดการ"];
 let SHUT={};try{SHUT=JSON.parse(localStorage.getItem("pi.shut")||"{}")}catch(e){}
 const secTitle=e=>(e.querySelector(":scope>b")||{}).textContent||"";
-function applyShut(){document.querySelectorAll(".panel .sec").forEach(e=>{const t=secTitle(e),v=t in SHUT?SHUT[t]:SHUT_DEF.includes(t);e.classList.toggle("shut",!!v);const b=e.querySelector(":scope>b");if(b){b.tabIndex=0;b.setAttribute("role","button");b.setAttribute("aria-expanded",v?"false":"true")}})}
+function applyShut(){document.querySelectorAll(".panel .sec").forEach(e=>{const t=secTitle(e),v=t in SHUT?SHUT[t]:SHUT_DEF.includes(t);e.classList.toggle("shut",!!v);const b=e.querySelector(":scope>b");if(b){b.tabIndex=0;b.setAttribute("role","button");b.setAttribute("aria-expanded",v?"false":"true")}});if(typeof syncAllT==="function")syncAllT()}
 function setShut(e,v){const t=secTitle(e);SHUT[t]=v;try{localStorage.setItem("pi.shut",JSON.stringify(SHUT))}catch(x){}applyShut()}
 document.querySelector(".panel").addEventListener("click",ev=>{const b=ev.target.closest(".sec>b");if(b&&!ev.target.closest("button,a,input,select"))setShut(b.parentNode,!b.parentNode.classList.contains("shut"))});
 document.querySelector(".panel").addEventListener("keydown",ev=>{if((ev.key==="Enter"||ev.key===" ")&&ev.target.matches(".sec>b")){ev.preventDefault();ev.target.click()}});
-$("jump").addEventListener("click",ev=>{const a=ev.target.closest("a");if(!a)return;
-  if(a.dataset.all!==undefined){document.querySelectorAll(".panel .sec").forEach(e=>{SHUT[secTitle(e)]=a.dataset.all==="0"});try{localStorage.setItem("pi.shut",JSON.stringify(SHUT))}catch(x){}applyShut();return}
-  const secs=[...document.querySelectorAll(".panel .sec")],t=a.dataset.j;
-  const e=t==="__lists"?document.querySelector("#lists .sec"):secs.find(x=>secTitle(x).startsWith(t));if(!e)return;
-  setShut(e,false);e.scrollIntoView({behavior:"smooth",block:"start"});e.classList.add("flash");setTimeout(()=>e.classList.remove("flash"),1200)});
+const allT=$("allToggle");function syncAllT(){allT.textContent=document.querySelector(".panel .sec:not(.shut)")?"ย่อทั้งหมด":"ขยายทั้งหมด"}
+allT.onclick=()=>{const shut=!!document.querySelector(".panel .sec:not(.shut)");document.querySelectorAll(".panel .sec").forEach(e=>{SHUT[secTitle(e)]=shut});try{localStorage.setItem("pi.shut",JSON.stringify(SHUT))}catch(x){}applyShut()};
+allT.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();allT.click()}};
 function toggleView(){const st=document.querySelector(".stage"),b=$("viewBtn");const onSheet=b.dataset.on==="1";
   if(onSheet){window.scrollTo({top:0,behavior:"smooth"});b.dataset.on="0";b.textContent="👁 ตัวอย่าง"}else{st.scrollIntoView({behavior:"smooth",block:"start"});b.dataset.on="1";b.textContent="✎ แก้ไข"}}
 {const lu=listsUI;listsUI=function(){const r=lu.apply(this,arguments);applyShut();return r}}
@@ -1208,7 +1204,7 @@ function showLM(){
 const GKEY="pi.guide.seen";
 function guideSeen(){try{return localStorage.getItem(GKEY)==="1"}catch(e){return false}}
 function hideGuideBanner(){const b=$("gdBanner");if(b)b.hidden=true;try{localStorage.setItem(GKEY,"1")}catch(e){}}
-if(!guideSeen())$("gdBanner").hidden=false;
+
 function openGuide(){
   hideGuideBanner();closeOv("ov5");const o=document.createElement("div");o.id="ov5";o.className="ov";
   o.innerHTML=`<div class="md" role="dialog" aria-modal="true" aria-label="คู่มือการใช้งาน" style="max-width:780px"><div class="mdh"><b>📖 คู่มือการใช้งาน Product Ingredient</b><button class="btn" data-close>ปิด</button></div><div class="mdb">
