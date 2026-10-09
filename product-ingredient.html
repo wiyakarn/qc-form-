@@ -90,7 +90,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
 <div class="app">
 <div class="panel">
   <h1>📋 Product Ingredient</h1>
-  <div class="bar" style="margin:0 0 8px"><button class="btn p" onclick="newItem()">＋ สินค้าใหม่</button><button class="btn" onclick="openLib()">📚 รายการที่บันทึกไว้</button><button class="btn gb" onclick="openGuide()">📖 คู่มือการใช้งาน</button><button class="btn" id="adminBtn" onclick="openAdmin()" hidden>👥 การใช้งานของผู้ใช้</button></div>
+  <div class="bar" style="margin:0 0 8px"><button class="btn p" onclick="newItem()">＋ สินค้าใหม่</button><button class="btn" onclick="dupItem()" title="ทำสำเนาข้อมูลชุดนี้เป็นรายการใหม่ แล้วแก้ไขต่อ">⧉ ทำสำเนา</button><button class="btn" onclick="openLib()">📚 รายการที่บันทึกไว้</button><button class="btn gb" onclick="openGuide()">📖 คู่มือการใช้งาน</button><button class="btn" id="adminBtn" onclick="openAdmin()" hidden>👥 การใช้งานของผู้ใช้</button></div>
   <div class="note" style="margin:0 0 8px"><span id="cloudChip">กำลังเชื่อมต่อ…</span> <span title="ระบบบันทึกเวลาเข้าใช้และการทำงาน เพื่อให้ผู้ดูแลตรวจสอบ">· 🛈 ระบบบันทึกเวลาเข้าใช้และการทำงานให้ผู้ดูแลตรวจสอบ</span></div>
   <div class="gbn" id="gdBanner" hidden><span>ใช้งานครั้งแรก? อ่านคู่มือสั้นๆ ก่อนเริ่ม</span><button class="btn p" onclick="openGuide()">เปิดคู่มือ</button><button class="btn x" onclick="hideGuideBanner()" aria-label="ปิดข้อความนี้">✕</button></div>
   <div class="sec"><b>แบรนด์ (เลือกได้หลายแบรนด์)</b>
@@ -141,7 +141,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
   </div>
   <div id="lists"></div>
   <div class="sec"><b>คลังข้อมูล (แบรนด์ → หัวข้อ → ตำหนิ)</b>
-    <div class="bar" style="margin-top:0"><button class="btn p" onclick="saveToLib()">💾 บันทึกเข้าคลัง</button><button class="btn" onclick="openLib()">📚 เปิดคลัง</button><button class="btn" onclick="dupItem()" title="ทำสำเนาข้อมูลชุดนี้เป็นรายการใหม่ แล้วแก้ไขต่อ">⧉ ทำสำเนา</button><button class="btn del" id="delCur" onclick="deleteCurrent()" disabled>🗑 ลบรายการนี้ออกจากคลัง</button><label class="note" style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="libAuto" checked> บันทึกลงคลังอัตโนมัติ</label></div>
+    <div class="bar" style="margin-top:0"><button class="btn p" onclick="saveToLib()">💾 บันทึกเข้าคลัง</button><button class="btn" onclick="openLib()">📚 เปิดคลัง</button><button class="btn del" id="delCur" onclick="deleteCurrent()" disabled>🗑 ลบรายการนี้ออกจากคลัง</button><label class="note" style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="libAuto" checked> บันทึกลงคลังอัตโนมัติ</label></div>
     <div class="note" id="libSt"></div><div class="note" id="libKind"></div>
   </div>
   <div class="sec"><b>ดาวน์โหลด / ส่ง</b>
