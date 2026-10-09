@@ -83,6 +83,9 @@ body{font-family:Sarabun,"Noto Sans Thai",Tahoma,sans-serif;background:var(--bg)
 .hm-br .tr i{background:#13203c}.hm-br .nm img{border-radius:50%;background:#fff;height:20px;width:20px;padding:1px}
 .hm-empty .hm-steps div{border-radius:20px}
 @media(max-width:900px){.hm-card,.hm-sec{border-radius:24px}}
+button.hm-k{font:inherit;text-align:left;cursor:pointer;width:100%;transition:transform .15s,box-shadow .15s}button.hm-k:hover,button.hm-k:focus-visible{transform:translateY(-3px);box-shadow:var(--sh2)}button.hm-k:active{transform:translateY(0)}
+.hm-k>span{display:block!important;margin-top:4px;font-size:12px;color:var(--grn);opacity:.75}.hm-k:hover>span{opacity:1}.hm-k.on{outline:2px solid var(--grn);outline-offset:-2px}
+.hm-sec.flash{outline:3px solid #5b7bc0;outline-offset:2px;transition:outline-color .3s}
 @media print{#home{display:none!important}}
 .panel h1{font-size:16px;margin-bottom:10px}
 .panel h1{margin-bottom:8px}
@@ -1126,7 +1129,7 @@ async function openAdmin(){
 }
 Cloud.ready=Lib.init().then(()=>Cloud.init()).catch(()=>{});
 /* ===== หน้าแรก (Home) ===== */
-const HF={brand:""};
+const HF={brand:"",days:0};
 let USER_EDITED=false;document.querySelector(".panel").addEventListener("input",e=>{if(e.isTrusted)USER_EDITED=true});
 function showHome(){$("home").hidden=false;document.querySelector(".app").style.display="none";try{sessionStorage.setItem("pi.view","home")}catch(e){}window.scrollTo(0,0);renderHome()}
 function enterForm(){$("home").hidden=true;document.querySelector(".app").style.display="";try{sessionStorage.setItem("pi.view","form")}catch(e){}}
@@ -1147,22 +1150,26 @@ async function renderHome(){
   let items=[];try{items=HOME_ITEMS=await Lib.list()}catch(e){items=[]}
   {const wk=Date.now()-7*864e5,cnt={};items.forEach(x=>(x.brands||[]).forEach(b=>cnt[b]=(cnt[b]||0)+1));
    const nb=Object.keys(cnt).length,df=items.reduce((n,x)=>n+((x.defects||[]).length),0),ph=items.reduce((n,x)=>n+(x.photoCount||0),0);
-   $("hmKpi").innerHTML=[["รายการในคลัง",items.length,"สินค้าที่บันทึกไว้ทั้งหมด"],["อัปเดตใน 7 วัน",items.filter(x=>(x.updated||0)>=wk).length,"แก้ไขหรือเพิ่มใหม่"],["แบรนด์ที่มีข้อมูล",nb,"จาก "+allBrands().length+" แบรนด์"]].map(k=>`<div class="hm-k"><small>${k[0]}</small><b>${k[1]}</b><span>${k[2]}</span></div>`).join("");
+   $("hmKpi").innerHTML=[["รายการในคลัง",items.length,"สินค้าที่บันทึกไว้ทั้งหมด"],["อัปเดตใน 7 วัน",items.filter(x=>(x.updated||0)>=wk).length,"แก้ไขหรือเพิ่มใหม่"],["แบรนด์ที่มีข้อมูล",nb,"จาก "+allBrands().length+" แบรนด์"]].map((k,i)=>`<button class="hm-k${(i===1&&HF.days)?" on":""}" data-k="${["all","week","brands"][i]}" aria-label="${k[0]} ${k[1]} ดูรายการ"><small>${k[0]}</small><b>${k[1]}</b><span>ดูรายการ →</span></button>`).join("");
    const rows=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||a.localeCompare(b)).slice(0,6),mx=Math.max(1,...rows.map(b=>cnt[b]));
    const SH=["#13203c","#2f4a85","#5b7bc0","#93a9d6","#b9c7e3","#d5ddee"],tot=rows.reduce((n,b)=>n+cnt[b],0),oth=Object.keys(cnt).reduce((n,b)=>n+cnt[b],0)-tot;
    {let acc=0;const seg=rows.map((b,i)=>{const a0=acc/Math.max(1,tot+oth)*100;acc+=cnt[b];return SH[i]+" "+a0+"% "+(acc/Math.max(1,tot+oth)*100)+"%"});if(oth>0)seg.push("#e6e9f1 "+(acc/(tot+oth)*100)+"% 100%");$("hmDonut").style.background=rows.length?"conic-gradient("+seg.join(",")+")":"#e6e9f1";$("hmDnN").textContent=tot+oth;$("hmDn").hidden=!rows.length}
    $("hmBars").innerHTML=rows.length?rows.map((b,i)=>{const l=logoOf(b);return `<button class="hm-br${HF.brand===b?" on":""}" data-b="${esc(b)}" title="${esc(b)}: ${cnt[b]} รายการ"><span class="nm"><i class="dot" style="background:${SH[i]}"></i>${l?`<img src="${l}" alt="">`:""}${esc(b)}</span><span class="tr"><i style="width:${Math.round(cnt[b]/mx*100)}%;background:${SH[i]}"></i></span><span class="ct">${cnt[b]}</span></button>`}).join(""):'<p class="note">ยังไม่มีข้อมูล เมื่อบันทึกสินค้าแล้วจะแสดงที่นี่</p>';
-   const fl=$("hmFlt");fl.hidden=!HF.brand;fl.innerHTML=HF.brand?`<span>กำลังดูเฉพาะแบรนด์ <b>${esc(HF.brand)}</b></span><a data-clearf>ดูทั้งหมด</a>`:""}
-  const f=HF.brand?items.filter(x=>(x.brands||[]).includes(HF.brand)):items;
+   const fl=$("hmFlt"),tags=[HF.brand?"แบรนด์ <b>"+esc(HF.brand)+"</b>":"",HF.days?"ที่อัปเดตใน <b>"+HF.days+" วัน</b>":""].filter(Boolean);fl.hidden=!tags.length;fl.innerHTML=tags.length?`<span>กำลังดูเฉพาะ ${tags.join(" · ")}</span><a data-clearf>ดูทั้งหมด</a>`:""}
+  let f=HF.brand?items.filter(x=>(x.brands||[]).includes(HF.brand)):items;if(HF.days)f=f.filter(x=>(x.updated||0)>=Date.now()-HF.days*864e5);const LIM=(HF.brand||HF.days)?10:3;
   f.sort((a,b)=>(b.updated||0)-(a.updated||0));
   $("hmCnt").textContent=items.length?"ทั้งหมด "+items.length+" รายการ":"";
   const names={};try{if(C.user&&C.on){const ids=[...new Set(f.slice(0,5).map(x=>x.editor).filter(Boolean))];if(ids.length){const ps=await C.user.profiles(ids);ids.forEach(i=>names[i]=ps[i]&&ps[i].name)}}}catch(e){}
   $("hmRecent").innerHTML=!items.length?`<div class="hm-empty"><b>เริ่มต้นง่ายๆ 3 ขั้นตอน</b><div class="hm-steps"><div><b>1 · เลือกแบรนด์</b>โลโก้และสีขึ้นเอง</div><div><b>2 · แนบสเปคหรือกรอก</b>ติ๊กเลือกข้อมูลที่ใช้</div><div><b>3 · บันทึกและส่งออก</b>PDF · Word · PowerPoint</div></div><button class="btn p" data-go="new">เริ่มเลย</button></div>`
-   :!f.length?`<div class="hm-empty"><p>ยังไม่มีรายการของ <b>${esc(HF.brand)}</b> ในคลัง</p><div class="bar" style="justify-content:center"><button class="btn p" data-newb="${esc(HF.brand)}">＋ สร้างรายการของ ${esc(HF.brand)}</button><button class="btn" data-clearf>ล้างตัวกรอง</button></div></div>`
-   :f.slice(0,3).map(it=>{const l=logoOf((it.brands||[])[0]);return `<div class="hm-it">${l?`<img src="${l}" alt="">`:""}<div class="nm"><b>${esc(it.code||"")} ${esc(it.nameTh||"")}</b><span>${esc((it.brands||[]).join(", "))} · แก้ล่าสุด ${esc(ago(it.updated))}${names[it.editor]?" โดย "+esc(names[it.editor]):""}</span></div><button class="btn p" data-open="${esc(it.id)}">เปิด</button><button class="btn ic1" data-copy="${esc(it.id)}" title="คัดลอกเป็นรายการใหม่" aria-label="คัดลอกเป็นรายการใหม่">⧉</button></div>`}).join("")+(f.length>3?`<div class="hm-more"><span>แสดง 3 รายการล่าสุด</span><a data-go="lib">ดูทั้งหมดในคลัง →</a></div>`:"")}
+   :!f.length?`<div class="hm-empty"><p>${HF.brand?"ยังไม่มีรายการของ <b>"+esc(HF.brand)+"</b> ในคลัง":"ไม่มีรายการที่อัปเดตในช่วงนี้"}</p><div class="bar" style="justify-content:center">${HF.brand?`<button class="btn p" data-newb="${esc(HF.brand)}">＋ สร้างรายการของ ${esc(HF.brand)}</button>`:""}<button class="btn" data-clearf>ล้างตัวกรอง</button></div></div>`
+   :f.slice(0,LIM).map(it=>{const l=logoOf((it.brands||[])[0]);return `<div class="hm-it">${l?`<img src="${l}" alt="">`:""}<div class="nm"><b>${esc(it.code||"")} ${esc(it.nameTh||"")}</b><span>${esc((it.brands||[]).join(", "))} · แก้ล่าสุด ${esc(ago(it.updated))}${names[it.editor]?" โดย "+esc(names[it.editor]):""}</span></div><button class="btn p" data-open="${esc(it.id)}">เปิด</button><button class="btn ic1" data-copy="${esc(it.id)}" title="คัดลอกเป็นรายการใหม่" aria-label="คัดลอกเป็นรายการใหม่">⧉</button></div>`}).join("")+(f.length>LIM||(HF.brand||HF.days)?`<div class="hm-more"><span>แสดง ${Math.min(LIM,f.length)} จาก ${f.length} รายการ</span><a data-go="lib">ดูทั้งหมดในคลัง →</a></div>`:"")}
 $("home").addEventListener("click",async ev=>{
   const ch=ev.target.closest("[data-b]");if(ch){HF.brand=HF.brand===ch.dataset.b?"":ch.dataset.b;renderHome();return}
-  if(ev.target.closest("[data-clearf]")){HF.brand="";renderHome();return}
+  if(ev.target.closest("[data-clearf]")){HF.brand="";HF.days=0;renderHome();return}
+  const kp=ev.target.closest("[data-k]");if(kp){const k=kp.dataset.k;
+    if(k==="all"){await openLib();return}
+    if(k==="week"){HF.days=HF.days?0:7;await renderHome();if(HF.days)$("hmRecent").scrollIntoView({behavior:"smooth",block:"center"});return}
+    if(k==="brands"){const t=$("hmDn").closest(".hm-sec");t.scrollIntoView({behavior:"smooth",block:"center"});t.classList.add("flash");setTimeout(()=>t.classList.remove("flash"),1300);return}}
   const nb=ev.target.closest("[data-newb]");if(nb){const b=nb.dataset.newb;newItem();if(!S.brands.includes(b))S.brands=[b];brandsUI();render();save();enterForm();return}
   const o=ev.target.closest("[data-open]");if(o){await openItem(o.dataset.open,false);return}
   const c=ev.target.closest("[data-copy]");if(c){await openItem(c.dataset.copy,true);return}
