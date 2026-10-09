@@ -25,6 +25,13 @@ body{font-family:Sarabun,"Noto Sans Thai",Tahoma,sans-serif;background:var(--bg)
 .hm-sec{background:#fff;border:1px solid var(--brd);border-radius:16px;padding:14px 16px;margin-bottom:14px}.hm-sec[hidden]{display:none}
 .hm-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.hm-h b{font-size:15px}
 .hm-help{font-size:13px;color:var(--tx2);margin:-2px 0 10px}.hm-lbl{font-size:12px;font-weight:700;color:var(--tx);margin-bottom:4px}.hm-lbl span{font-weight:400;color:var(--tx2)}.hm-chips .chip.on{background:var(--grn);color:#fff;border-color:var(--grn)}.hm-more{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12.5px;color:var(--tx2)}.hm-more a{color:var(--grn);cursor:pointer;text-decoration:underline}
+.hm-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 14px}
+.hm-k{background:#fff;border:1px solid var(--brd);border-radius:16px;padding:14px 16px}.hm-k small{display:block;font-size:12.5px;color:var(--tx2)}.hm-k b{display:block;font-size:30px;line-height:1.2;color:var(--grn);margin:2px 0}.hm-k span{font-size:12px;color:var(--tx2)}
+.hm-two{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px;align-items:start}.hm-two .hm-sec{margin-bottom:14px}
+.hm-flt{display:flex;align-items:center;gap:8px;background:var(--grn2);border-radius:10px;padding:6px 10px;font-size:13px;margin-bottom:6px}.hm-flt[hidden]{display:none}.hm-flt a{margin-left:auto;color:var(--grn);cursor:pointer;text-decoration:underline}
+.hm-bars{display:flex;flex-direction:column;gap:6px}.hm-br{display:grid;grid-template-columns:96px minmax(0,1fr) 28px;gap:8px;align-items:center;font:inherit;background:none;border:0;padding:5px 6px;border-radius:8px;cursor:pointer;text-align:left;width:100%}.hm-br:hover,.hm-br:focus-visible{background:var(--grn2)}.hm-br.on{background:var(--grn2);outline:1px solid var(--grn)}
+.hm-br .nm{display:flex;align-items:center;gap:6px;font-size:13px;min-width:0;overflow:hidden;white-space:nowrap}.hm-br .nm img{height:18px;max-width:34px;object-fit:contain;flex:0 0 auto}
+.hm-br .tr{height:10px;background:#eceef3;border-radius:5px;overflow:hidden}.hm-br .tr i{display:block;height:100%;background:var(--grn);border-radius:0 5px 5px 0;min-width:4px}.hm-br .ct{font-size:13px;font-weight:700;text-align:right}
 .hm-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px}.hm-chips .chip{flex:0 0 auto}
 .hm-it{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--brd)}.hm-it:first-child{border-top:0}
 .hm-it img{height:26px;max-width:64px;object-fit:contain}.hm-it .nm{flex:1;min-width:0}.hm-it .nm b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hm-it .nm span{font-size:12px;color:var(--tx2)}
@@ -32,7 +39,7 @@ body{font-family:Sarabun,"Noto Sans Thai",Tahoma,sans-serif;background:var(--bg)
 .hm-skel{height:44px;border-radius:8px;background:linear-gradient(90deg,#eee,#f7f7f7,#eee);background-size:200% 100%;animation:sk 1.2s infinite;margin:8px 0}@keyframes sk{to{background-position:-200% 0}}
 .hm-empty{text-align:center;padding:10px 4px}.hm-steps{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:10px 0}.hm-steps div{background:var(--grn2);border-radius:12px;padding:10px 14px;font-size:13px;min-width:150px}.hm-steps b{display:block;color:var(--grn)}
 .hm-ft{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}.hm-ft .btn{padding:9px 14px;font-size:13.5px}.hm-ft [data-go=form]{margin-left:auto}
-@media(max-width:900px){.hm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hm-hd h2{font-size:24px}.hm-hd{padding-top:24px}.hm-card{min-height:118px}}
+@media(max-width:900px){.hm-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}.hm-k b{font-size:26px}.hm-two{grid-template-columns:minmax(0,1fr)}.hm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hm-hd h2{font-size:24px}.hm-hd{padding-top:24px}.hm-card{min-height:118px}}
 @media print{#home{display:none!important}}
 .panel h1{font-size:16px;margin-bottom:10px}
 .panel h1{margin-bottom:8px}
@@ -139,13 +146,20 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
       <button class="hm-card" data-go="lib"><span class="ic">📚</span><b>เปิดจากคลัง</b><small>ค้นหาสินค้าที่บันทึกไว้แล้ว</small></button>
       <button class="hm-card" data-go="copy"><span class="ic">⧉</span><b>ทำสำเนา</b><small>สินค้าคล้ายกัน คัดลอกแล้วแก้เฉพาะที่ต่าง</small></button>
     </div>
+    <div class="hm-kpi" id="hmKpi" aria-label="สรุปภาพรวม"></div>
     <div class="hm-sec" id="hmCont" hidden></div>
-    <div class="hm-sec">
-      <div class="hm-h"><b>📚 รายการที่บันทึกไว้ล่าสุด</b><span class="note" id="hmCnt" style="margin:0"></span></div>
-      <p class="hm-help">สินค้าที่ทุกคนบันทึกเข้าคลังไว้แล้ว เรียงจากแก้ไขล่าสุด กด “เปิด” เพื่อแก้ต่อ หรือ “คัดลอก” เพื่อทำเป็นรายการใหม่</p>
-      <div class="hm-lbl">กรองตามแบรนด์ <span>(กดซ้ำเพื่อยกเลิก)</span></div>
-      <div class="hm-chips" id="hmBr"></div>
-      <div id="hmRecent"><div class="hm-skel"></div><div class="hm-skel"></div><div class="hm-skel"></div></div>
+    <div class="hm-two">
+      <div class="hm-sec">
+        <div class="hm-h"><b>📚 รายการที่บันทึกไว้ล่าสุด</b><span class="note" id="hmCnt" style="margin:0"></span></div>
+        <p class="hm-help">สินค้าที่ทุกคนบันทึกเข้าคลังไว้แล้ว เรียงจากแก้ไขล่าสุด กด “เปิด” เพื่อแก้ต่อ หรือ “คัดลอก” เพื่อทำเป็นรายการใหม่</p>
+        <div id="hmFlt" class="hm-flt" hidden></div>
+        <div id="hmRecent"><div class="hm-skel"></div><div class="hm-skel"></div><div class="hm-skel"></div></div>
+      </div>
+      <div class="hm-sec">
+        <div class="hm-h"><b>🏷️ จำนวนรายการต่อแบรนด์</b></div>
+        <p class="hm-help">กดที่แบรนด์เพื่อดูเฉพาะรายการของแบรนด์นั้น</p>
+        <div id="hmBars" class="hm-bars"></div>
+      </div>
     </div>
     <div class="hm-ft">
       <button class="btn" data-go="guide">📖 คู่มือการใช้งาน</button>
@@ -1086,8 +1100,13 @@ async function renderHome(){
   $("hmAdmin").hidden=!(C.on&&C.owner);
   const cur=((HAD_STATE||USER_EDITED)&&(S.code||S.nameTh))?`<div class="hm-h"><b>งานที่ทำอยู่</b></div><div class="hm-it"><div class="nm"><b>${esc(S.code||"")} ${esc(S.nameTh||"")}</b><span>${esc((S.brands||[]).join(", "))}${S.recId?" · อยู่ในคลัง":" · ยังไม่ได้บันทึกเข้าคลัง"}</span></div><button class="btn p" data-go="form">ทำต่อ</button></div>`:"";
   const ct=$("hmCont");ct.hidden=!cur;ct.innerHTML=cur;
-  $("hmBr").innerHTML=allBrands().map(b=>{const l=logoOf(b);return `<label class="chip${HF.brand===b?" on":""}" data-b="${esc(b)}">${l?`<img src="${l}" style="height:16px;max-width:40px;object-fit:contain">`:""}${esc(b)}</label>`}).join("");
   let items=[];try{items=HOME_ITEMS=await Lib.list()}catch(e){items=[]}
+  {const wk=Date.now()-7*864e5,cnt={};items.forEach(x=>(x.brands||[]).forEach(b=>cnt[b]=(cnt[b]||0)+1));
+   const nb=Object.keys(cnt).length,df=items.reduce((n,x)=>n+((x.defects||[]).length),0),ph=items.reduce((n,x)=>n+(x.photoCount||0),0);
+   $("hmKpi").innerHTML=[["รายการในคลัง",items.length,"สินค้าที่บันทึกไว้ทั้งหมด"],["อัปเดตใน 7 วัน",items.filter(x=>(x.updated||0)>=wk).length,"แก้ไขหรือเพิ่มใหม่"],["แบรนด์ที่มีข้อมูล",nb,"จาก "+allBrands().length+" แบรนด์"],["ตำหนิที่บันทึก",df,"รูปประกอบ "+ph+" รูป"]].map(k=>`<div class="hm-k"><small>${k[0]}</small><b>${k[1]}</b><span>${k[2]}</span></div>`).join("");
+   const rows=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||a.localeCompare(b)),mx=Math.max(1,...rows.map(b=>cnt[b]));
+   $("hmBars").innerHTML=rows.length?rows.map(b=>{const l=logoOf(b);return `<button class="hm-br${HF.brand===b?" on":""}" data-b="${esc(b)}" title="${esc(b)}: ${cnt[b]} รายการ"><span class="nm">${l?`<img src="${l}" alt="">`:""}${esc(b)}</span><span class="tr"><i style="width:${Math.round(cnt[b]/mx*100)}%"></i></span><span class="ct">${cnt[b]}</span></button>`}).join(""):'<p class="note">ยังไม่มีข้อมูล เมื่อบันทึกสินค้าแล้วจะแสดงที่นี่</p>';
+   const fl=$("hmFlt");fl.hidden=!HF.brand;fl.innerHTML=HF.brand?`<span>กำลังดูเฉพาะแบรนด์ <b>${esc(HF.brand)}</b></span><a data-clearf>ดูทั้งหมด</a>`:""}
   const f=HF.brand?items.filter(x=>(x.brands||[]).includes(HF.brand)):items;
   f.sort((a,b)=>(b.updated||0)-(a.updated||0));
   $("hmCnt").textContent=items.length?"ในคลังทั้งหมด "+items.length+" รายการ":"";
@@ -1096,7 +1115,7 @@ async function renderHome(){
    :!f.length?`<div class="hm-empty"><p>ยังไม่มีรายการของ <b>${esc(HF.brand)}</b> ในคลัง</p><div class="bar" style="justify-content:center"><button class="btn p" data-newb="${esc(HF.brand)}">＋ สร้างรายการของ ${esc(HF.brand)}</button><button class="btn" data-clearf>ล้างตัวกรอง</button></div></div>`
    :f.slice(0,5).map(it=>{const l=logoOf((it.brands||[])[0]);return `<div class="hm-it">${l?`<img src="${l}" alt="">`:""}<div class="nm"><b>${esc(it.code||"")} ${esc(it.nameTh||"")}</b><span>${esc((it.brands||[]).join(", "))} · แก้ล่าสุด ${esc(ago(it.updated))}${names[it.editor]?" โดย "+esc(names[it.editor]):""}</span></div><button class="btn p" data-open="${esc(it.id)}">เปิด</button><button class="btn" data-copy="${esc(it.id)}" title="คัดลอกเป็นรายการใหม่">⧉ คัดลอก</button></div>`}).join("")+(f.length>5||items.length>5?`<div class="hm-more"><span>แสดง 5 รายการล่าสุด</span><a data-go="lib">ดูทั้งหมดในคลัง →</a></div>`:"")}
 $("home").addEventListener("click",async ev=>{
-  const ch=ev.target.closest(".chip[data-b]");if(ch){HF.brand=HF.brand===ch.dataset.b?"":ch.dataset.b;renderHome();return}
+  const ch=ev.target.closest("[data-b]");if(ch){HF.brand=HF.brand===ch.dataset.b?"":ch.dataset.b;renderHome();return}
   if(ev.target.closest("[data-clearf]")){HF.brand="";renderHome();return}
   const nb=ev.target.closest("[data-newb]");if(nb){const b=nb.dataset.newb;newItem();if(!S.brands.includes(b))S.brands=[b];brandsUI();render();save();enterForm();return}
   const o=ev.target.closest("[data-open]");if(o){await openItem(o.dataset.open,false);return}
@@ -1109,7 +1128,7 @@ $("home").addEventListener("click",async ev=>{
   else if(go==="copy"){await openLib();const m=$("libMsg");if(m){m.textContent="กด “⧉ คัดลอก” ที่รายการที่ต้องการ แล้วแก้เฉพาะส่วนที่ต่าง";m.style.color="var(--grn)"}}
   else if(go==="guide")openGuide();
   else if(go==="admin")openAdmin()});
-$("home").addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){const l=ev.target.closest&&ev.target.closest(".chip[data-b]");if(l){ev.preventDefault();l.click()}}});
+$("home").addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){}});
 (function(){let v="home";try{v=sessionStorage.getItem("pi.view")||"home"}catch(e){}v==="form"?enterForm():showHome();
   if(window.__cloud&&window.__cloud.ready)window.__cloud.ready.then(()=>{if(!$("home").hidden)renderHome()});
   Lib.init().then(()=>Lib.loadLogos()).then(()=>{if(!$("home").hidden)renderHome()}).catch(()=>{})})();
