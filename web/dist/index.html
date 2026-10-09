@@ -194,7 +194,7 @@ const ready=(async()=>{
 ready.then(ok=>{if(!ok)showLogin()});
 
 /* ---------- login gate (email + password; users sign up themselves) ---------- */
-const TH_ERR=m=>/invalid login/i.test(m)?"อีเมลหรือรหัสผ่านไม่ถูกต้อง":/rate limit|too many/i.test(m)?"ลองบ่อยเกินไป รอสักครู่แล้วลองใหม่":/banned|disabled/i.test(m)?"บัญชีนี้ถูกปิดการใช้งาน ติดต่อผู้ดูแล":m;
+const TH_ERR=m=>/signups? not allowed/i.test(m)?"ตอนนี้ระบบยังปิดการสมัครใหม่ ติดต่อผู้ดูแล":/email not confirmed/i.test(m)?"บัญชียังไม่ได้ยืนยันอีเมล ติดต่อผู้ดูแล":/invalid login/i.test(m)?"อีเมลหรือรหัสผ่านไม่ถูกต้อง":/rate limit|too many/i.test(m)?"ลองบ่อยเกินไป รอสักครู่แล้วลองใหม่":/banned|disabled/i.test(m)?"บัญชีนี้ถูกปิดการใช้งาน ติดต่อผู้ดูแล":m;
 function showLogin(){
   const run=()=>{
     const o=document.createElement("div");o.id="loginGate";
