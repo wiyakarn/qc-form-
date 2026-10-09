@@ -10,7 +10,29 @@
 body{font-family:Sarabun,"Noto Sans Thai",Tahoma,sans-serif;background:var(--bg);color:var(--tx);font-size:14px;line-height:1.5}
 .app{display:grid;grid-template-columns:minmax(360px,450px) 1fr;min-height:100vh}
 .panel{background:var(--sur);border-right:1px solid var(--brd);padding:14px;overflow-y:auto;height:100vh;position:sticky;top:0}
-.panel h1{font-size:16px;margin-bottom:10px}
+#home{min-height:100vh;background:linear-gradient(180deg,var(--grn2) 0,var(--bg) 340px)}#home[hidden]{display:none}
+.hm{max-width:980px;margin:0 auto;padding:0 16px 40px}
+.hm-hd{padding:34px 4px 18px}.hm-t{font-size:13px;font-weight:700;color:var(--grn);letter-spacing:.3px}
+.hm-hd h2{font-size:30px;line-height:1.25;margin:6px 0 4px;color:var(--tx)}.hm-hd p{font-size:15px;color:var(--tx2)}
+.hm-pill{display:inline-block;margin-top:12px;font-size:12px;background:#fff;border:1px solid var(--brd);border-radius:20px;padding:3px 12px;color:var(--tx2)}
+.hm-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:6px 0 22px}
+.hm-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;font:inherit;background:#fff;border:1px solid var(--brd);border-radius:16px;padding:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .12s,box-shadow .12s,border-color .12s;min-height:132px}
+.hm-card:hover,.hm-card:focus-visible{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.1);border-color:var(--grn)}
+.hm-card .ic{width:44px;height:44px;border-radius:12px;background:var(--grn2);color:var(--grn);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:6px}
+.hm-card b{font-size:16px;color:var(--tx)}.hm-card small{font-size:12.5px;color:var(--tx2);line-height:1.4}
+.hm-card[data-go=new]{background:var(--grn);border-color:var(--grn)}.hm-card[data-go=new] b,.hm-card[data-go=new] small{color:#fff}.hm-card[data-go=new] .ic{background:rgba(255,255,255,.2);color:#fff}
+.hm-sec{background:#fff;border:1px solid var(--brd);border-radius:16px;padding:14px 16px;margin-bottom:14px}.hm-sec[hidden]{display:none}
+.hm-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.hm-h b{font-size:15px}
+.hm-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px}.hm-chips .chip{flex:0 0 auto}
+.hm-it{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--brd)}.hm-it:first-child{border-top:0}
+.hm-it img{height:26px;max-width:64px;object-fit:contain}.hm-it .nm{flex:1;min-width:0}.hm-it .nm b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hm-it .nm span{font-size:12px;color:var(--tx2)}
+.hm-it .btn{padding:7px 12px;font-size:13px}
+.hm-skel{height:44px;border-radius:8px;background:linear-gradient(90deg,#eee,#f7f7f7,#eee);background-size:200% 100%;animation:sk 1.2s infinite;margin:8px 0}@keyframes sk{to{background-position:-200% 0}}
+.hm-empty{text-align:center;padding:10px 4px}.hm-steps{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:10px 0}.hm-steps div{background:var(--grn2);border-radius:12px;padding:10px 14px;font-size:13px;min-width:150px}.hm-steps b{display:block;color:var(--grn)}
+.hm-ft{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}.hm-ft .btn{padding:9px 14px;font-size:13.5px}.hm-ft [data-go=form]{margin-left:auto}
+@media(max-width:900px){.hm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hm-hd h2{font-size:24px}.hm-hd{padding-top:24px}.hm-card{min-height:118px}}
+@media print{#home{display:none!important}}
+.panel h1{font-size:16px;margin-bottom:10px;cursor:pointer}
 .panel h1{margin-bottom:8px}
 .tb{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:0;z-index:20;background:var(--sur);margin:0 -14px 8px;padding:8px 14px;border-bottom:1px solid var(--brd);box-shadow:0 2px 6px rgba(0,0,0,.05)}
 .tb .btn{padding:7px 11px;font-size:13px;min-height:34px}.tb .mob{display:none}
@@ -99,10 +121,39 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
 </style>
 </head>
 <body>
+<section id="home" aria-label="หน้าแรก" hidden>
+  <div class="hm">
+    <header class="hm-hd">
+      <div class="hm-t">📋 Product Ingredient</div>
+      <h2 id="hmHello">สวัสดี</h2>
+      <p id="hmSub">เอกสารข้อมูลสินค้าสำหรับหน้าร้าน ทำเสร็จได้ในไม่กี่ขั้นตอน</p>
+      <div class="hm-pill" id="hmPill">☁ กำลังเชื่อมต่อ…</div>
+    </header>
+    <div class="hm-grid" id="hmCards">
+      <button class="hm-card" data-go="new"><span class="ic">＋</span><b>สร้างสินค้าใหม่</b><small>กรอกเอง เริ่มจากฟอร์มว่าง</small></button>
+      <button class="hm-card" data-go="spec"><span class="ic">📎</span><b>แนบสเปค</b><small>Word · PDF · รูป · Excel — ระบบดึงข้อมูลให้</small></button>
+      <button class="hm-card" data-go="lib"><span class="ic">📚</span><b>เปิดจากคลัง</b><small>ค้นหาสินค้าที่บันทึกไว้แล้ว</small></button>
+      <button class="hm-card" data-go="copy"><span class="ic">⧉</span><b>ทำสำเนา</b><small>สินค้าคล้ายกัน คัดลอกแล้วแก้เฉพาะที่ต่าง</small></button>
+    </div>
+    <div class="hm-sec" id="hmCont" hidden></div>
+    <div class="hm-sec">
+      <div class="hm-h"><b>ล่าสุดในคลัง</b><span class="note" id="hmCnt" style="margin:0"></span></div>
+      <div class="hm-chips" id="hmBr"></div>
+      <div id="hmRecent"><div class="hm-skel"></div><div class="hm-skel"></div><div class="hm-skel"></div></div>
+    </div>
+    <div class="hm-ft">
+      <button class="btn" data-go="guide">📖 คู่มือการใช้งาน</button>
+      <button class="btn" data-go="admin" id="hmAdmin" hidden>👥 ดูการใช้งานของผู้ใช้</button>
+      <button class="btn p" data-go="form" id="hmForm">เข้าสู่ฟอร์ม →</button>
+      <div class="note" style="flex-basis:100%;margin:6px 0 0">ระบบบันทึกเวลาเข้าใช้และการทำงาน เพื่อให้ผู้ดูแลตรวจสอบ</div>
+    </div>
+  </div>
+</section>
 <div class="app">
 <div class="panel">
   <h1>📋 Product Ingredient</h1>
   <div class="tb" id="topbar" role="toolbar" aria-label="เมนูหลัก">
+    <button class="btn" onclick="showHome()" title="กลับหน้าแรก">🏠</button>
     <button class="btn" onclick="newItem()" title="เริ่มสินค้าใหม่">＋ ใหม่</button>
     <button class="btn" onclick="dupItem()" title="ทำสำเนาข้อมูลชุดนี้เป็นรายการใหม่ แล้วแก้ไขต่อ">⧉ สำเนา</button>
     <button class="btn p" onclick="saveToLib()" title="บันทึกเข้าคลัง">💾 บันทึก</button>
@@ -213,6 +264,7 @@ const splitVal=v=>{const s=String(v||"").trim(),m=s.match(/^(\D*?\d[\d.,]*(?:\s*
 const fmtDate=s=>{const m=String(s||"").match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[3]+"/"+m[2]+"/"+m[1]:String(s||"")};
 const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const blank=()=>({brands:["TPC"],customBrands:[],logos:{},code:"",nameTh:"",nameEn:"",menu:"",desc:"",allergen:"",halal:"NO",halalNo:"",photos:[],effDate:todayISO(),lang:"orig",tr:{},phys:[],store:[],recv:[],rej:[],defect:[],cautions:[]});
+let HAD_STATE=false;try{HAD_STATE=!!localStorage.getItem(KEY)}catch(e){}
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.brands)S=Object.assign(blank(),{...P.shrimp,cautions:CAUT.slice()});
 const REMOVED=["MFCR (SZ)","MFCR"];if(S.brands)S.brands=S.brands.filter(b=>!REMOVED.includes(b));if(S.customBrands)S.customBrands=S.customBrands.filter(b=>!REMOVED.includes(b));
@@ -827,6 +879,7 @@ function restoreS(js,ph,extra){
   Object.keys(ph).sort().forEach(k=>{let m;if(/^p\d+$/.test(k))S.photos.push(ph[k]);else if((m=k.match(/^(phys|store|recv|rej|defect)_(\d+)_(\d+)$/))){const r=S[m[1]][+m[2]];if(r){r[2]=r[2]||[];r[2][+m[3]]=ph[k]}}});
   S.photos=S.photos.filter(Boolean);PHK.forEach(k=>S[k].forEach(r=>{if(r[2])r[2]=r[2].filter(Boolean)}));
   fieldsUI();listsUI();brandsUI();phUI();render();
+  if(typeof enterForm==="function")enterForm();
 }
 function dupItem(fromLib){
   delete S.recId;delete S.recUpd;if(window.__cloud)window.__cloud.lastLibH="";
@@ -1010,6 +1063,51 @@ async function openAdmin(){
   load();
 }
 Cloud.ready=Lib.init().then(()=>Cloud.init()).catch(()=>{});
+/* ===== หน้าแรก (Home) ===== */
+const HF={brand:""};
+let USER_EDITED=false;document.querySelector(".panel").addEventListener("input",e=>{if(e.isTrusted)USER_EDITED=true});
+function showHome(){$("home").hidden=false;document.querySelector(".app").style.display="none";try{sessionStorage.setItem("pi.view","home")}catch(e){}window.scrollTo(0,0);renderHome()}
+function enterForm(){$("home").hidden=true;document.querySelector(".app").style.display="";try{sessionStorage.setItem("pi.view","form")}catch(e){}}
+async function openItem(id,copy){
+  try{const js=await Lib.json(id);if(!js)return;const ph=await Lib.photos(id),it=(HOME_ITEMS||[]).find(x=>x.id===id)||{};
+    restoreS(js,ph,copy?{}:{recId:id,recUpd:it.updated||0});
+    if(copy)dupItem(true);else{save();if(window.__cloud)window.__cloud.track("open-item",{code:it.code,name:it.nameTh})}}
+  catch(e){}}
+let HOME_ITEMS=null;
+const ago=t=>{if(!t)return"";const m=Math.round((Date.now()-t)/6e4);return m<1?"เมื่อสักครู่":m<60?m+" นาทีที่แล้ว":m<1440?Math.round(m/60)+" ชม. ที่แล้ว":m<43200?Math.round(m/1440)+" วันที่แล้ว":new Date(t).toLocaleDateString("th-TH")};
+async function renderHome(){
+  const h=new Date().getHours(),g=h<11?"สวัสดีตอนเช้า":h<17?"สวัสดีตอนบ่าย":"สวัสดีตอนเย็น",C=window.__cloud||{};
+  $("hmHello").textContent=g+((C.me&&C.me.name)?" คุณ"+C.me.name:"");
+  $("hmPill").textContent=C.on?"☁ เชื่อมต่อแล้ว · บันทึกอัตโนมัติเปิดอยู่":"💾 บันทึกในเครื่องนี้";
+  $("hmAdmin").hidden=!(C.on&&C.owner);
+  const cur=((HAD_STATE||USER_EDITED)&&(S.code||S.nameTh))?`<div class="hm-h"><b>งานที่ทำอยู่</b></div><div class="hm-it"><div class="nm"><b>${esc(S.code||"")} ${esc(S.nameTh||"")}</b><span>${esc((S.brands||[]).join(", "))}${S.recId?" · อยู่ในคลัง":" · ยังไม่ได้บันทึกเข้าคลัง"}</span></div><button class="btn p" data-go="form">ทำต่อ</button></div>`:"";
+  const ct=$("hmCont");ct.hidden=!cur;ct.innerHTML=cur;
+  $("hmBr").innerHTML=allBrands().map(b=>{const l=logoOf(b);return `<label class="chip${HF.brand===b?" on":""}" data-b="${esc(b)}">${l?`<img src="${l}" style="height:16px;max-width:40px;object-fit:contain">`:""}${esc(b)}</label>`}).join("");
+  let items=[];try{items=HOME_ITEMS=await Lib.list()}catch(e){items=[]}
+  const f=HF.brand?items.filter(x=>(x.brands||[]).includes(HF.brand)):items;
+  f.sort((a,b)=>(b.updated||0)-(a.updated||0));
+  $("hmCnt").textContent=items.length?"ทั้งหมด "+items.length+" รายการ":"";
+  const names={};try{if(C.user&&C.on){const ids=[...new Set(f.slice(0,5).map(x=>x.editor).filter(Boolean))];if(ids.length){const ps=await C.user.profiles(ids);ids.forEach(i=>names[i]=ps[i]&&ps[i].name)}}}catch(e){}
+  $("hmRecent").innerHTML=!items.length?`<div class="hm-empty"><b>เริ่มต้นง่ายๆ 3 ขั้นตอน</b><div class="hm-steps"><div><b>1 · เลือกแบรนด์</b>โลโก้และสีขึ้นเอง</div><div><b>2 · แนบสเปคหรือกรอก</b>ติ๊กเลือกข้อมูลที่ใช้</div><div><b>3 · บันทึกและส่งออก</b>PDF · Word · PowerPoint</div></div><button class="btn p" data-go="new">เริ่มเลย</button></div>`
+   :!f.length?'<p class="note">ไม่พบรายการของแบรนด์นี้</p>'
+   :f.slice(0,5).map(it=>{const l=logoOf((it.brands||[])[0]);return `<div class="hm-it">${l?`<img src="${l}" alt="">`:""}<div class="nm"><b>${esc(it.code||"")} ${esc(it.nameTh||"")}</b><span>${esc((it.brands||[]).join(", "))} · แก้ล่าสุด ${esc(ago(it.updated))}${names[it.editor]?" โดย "+esc(names[it.editor]):""}</span></div><button class="btn p" data-open="${esc(it.id)}">เปิด</button><button class="btn" data-copy="${esc(it.id)}" title="คัดลอกเป็นรายการใหม่">⧉ คัดลอก</button></div>`}).join("")}
+$("home").addEventListener("click",async ev=>{
+  const ch=ev.target.closest(".chip[data-b]");if(ch){HF.brand=HF.brand===ch.dataset.b?"":ch.dataset.b;renderHome();return}
+  const o=ev.target.closest("[data-open]");if(o){await openItem(o.dataset.open,false);return}
+  const c=ev.target.closest("[data-copy]");if(c){await openItem(c.dataset.copy,true);return}
+  const b=ev.target.closest("[data-go]");if(!b)return;const go=b.dataset.go;
+  if(go==="new"){newItem();enterForm()}
+  else if(go==="spec"){enterForm();$("specFile").click()}
+  else if(go==="form")enterForm();
+  else if(go==="lib"){await openLib();const q=$("libQ");if(q)q.focus()}
+  else if(go==="copy"){await openLib();const m=$("libMsg");if(m){m.textContent="กด “⧉ คัดลอก” ที่รายการที่ต้องการ แล้วแก้เฉพาะส่วนที่ต่าง";m.style.color="var(--grn)"}}
+  else if(go==="guide")openGuide();
+  else if(go==="admin")openAdmin()});
+$("home").addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){const l=ev.target.closest&&ev.target.closest(".chip[data-b]");if(l){ev.preventDefault();l.click()}}});
+document.querySelector(".panel h1").addEventListener("click",showHome);
+(function(){let v="home";try{v=sessionStorage.getItem("pi.view")||"home"}catch(e){}v==="form"?enterForm():showHome();
+  if(window.__cloud&&window.__cloud.ready)window.__cloud.ready.then(()=>{if(!$("home").hidden)renderHome()});
+  Lib.init().then(()=>Lib.loadLogos()).then(()=>{if(!$("home").hidden)renderHome()}).catch(()=>{})})();
 
 (function(){const d=$("logoBox");if(!d)return;try{d.open=localStorage.getItem("pi.logobox")==="1"}catch(e){}d.addEventListener("toggle",()=>{try{localStorage.setItem("pi.logobox",d.open?"1":"0")}catch(e){}})})();
 /* ===== ใช้งานง่าย: พับ/ขยายหัวข้อ · ไปที่ · สลับตัวอย่างบนมือถือ ===== */
