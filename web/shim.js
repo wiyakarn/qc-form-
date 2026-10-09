@@ -14,7 +14,10 @@ const ready=(async()=>{
 ready.then(ok=>{if(!ok)showLogin()});
 
 /* ---------- login gate (email + password; users sign up themselves) ---------- */
-const TH_ERR=m=>/signups? not allowed/i.test(m)?"ตอนนี้ระบบยังปิดการสมัครใหม่ ติดต่อผู้ดูแล":/email not confirmed/i.test(m)?"บัญชียังไม่ได้ยืนยันอีเมล ติดต่อผู้ดูแล":/invalid login/i.test(m)?"อีเมลหรือรหัสผ่านไม่ถูกต้อง":/rate limit|too many/i.test(m)?"ลองบ่อยเกินไป รอสักครู่แล้วลองใหม่":/banned|disabled/i.test(m)?"บัญชีนี้ถูกปิดการใช้งาน ติดต่อผู้ดูแล":m;
+const LGD={"in": {"th": "เข้าสู่ระบบ", "en": "Sign in", "zh": "登录"}, "up": {"th": "สมัครใช้งาน", "en": "Sign up", "zh": "注册"}, "subIn": {"th": "ใช้อีเมลและรหัสผ่านที่สมัครไว้", "en": "Use the email and password you registered with", "zh": "使用注册时的邮箱和密码"}, "subUp": {"th": "ใช้อีเมลของคุณ ตั้งรหัสผ่านอย่างน้อย 8 ตัวอักษร และใส่รหัสเชิญจากผู้ดูแล", "en": "Use your email, choose a password (8+ characters) and enter the invitation code from your admin", "zh": "使用您的邮箱，设置至少8位密码，并输入管理员提供的邀请码"}, "name": {"th": "ชื่อที่แสดง (เช่น ชื่อ-นามสกุล)", "en": "Display name (e.g. full name)", "zh": "显示名称（如姓名）"}, "email": {"th": "อีเมล", "en": "Email", "zh": "邮箱"}, "pw": {"th": "รหัสผ่าน", "en": "Password", "zh": "密码"}, "pw2": {"th": "พิมพ์รหัสผ่านอีกครั้ง", "en": "Repeat password", "zh": "再次输入密码"}, "invite": {"th": "รหัสเชิญ (ขอจากผู้ดูแล)", "en": "Invitation code (ask your admin)", "zh": "邀请码（向管理员索取）"}, "btnUp": {"th": "สมัครและเข้าใช้งาน", "en": "Sign up and start", "zh": "注册并开始"}, "busy": {"th": "กำลังดำเนินการ…", "en": "Please wait…", "zh": "处理中…"}, "short": {"th": "รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร", "en": "Password must be at least 8 characters", "zh": "密码至少需要8位"}, "mismatch": {"th": "รหัสผ่านสองช่องไม่ตรงกัน", "en": "The two passwords do not match", "zh": "两次输入的密码不一致"}, "noinvite": {"th": "กรุณาใส่รหัสเชิญ", "en": "Please enter the invitation code", "zh": "请输入邀请码"}, "badinvite": {"th": "รหัสเชิญไม่ถูกต้อง ตรวจสอบกับผู้ดูแล", "en": "Invalid invitation code. Check with your admin.", "zh": "邀请码不正确，请向管理员确认"}, "exists": {"th": "อีเมลนี้สมัครไว้แล้ว กด “เข้าสู่ระบบ”", "en": "This email is already registered. Use “Sign in”.", "zh": "该邮箱已注册，请点击“登录”"}, "confirm": {"th": "สมัครแล้ว กรุณายืนยันอีเมลจากกล่องจดหมาย แล้วกลับมาเข้าสู่ระบบ", "en": "Registered. Please confirm via the email we sent, then sign in.", "zh": "注册成功，请先通过邮件确认，再登录"}, "bad": {"th": "อีเมลหรือรหัสผ่านไม่ถูกต้อง", "en": "Wrong email or password", "zh": "邮箱或密码不正确"}, "rate": {"th": "ลองบ่อยเกินไป รอสักครู่แล้วลองใหม่", "en": "Too many attempts. Please wait and try again.", "zh": "尝试过于频繁，请稍后再试"}, "banned": {"th": "บัญชีนี้ถูกปิดการใช้งาน ติดต่อผู้ดูแล", "en": "This account is disabled. Contact the administrator.", "zh": "该账号已停用，请联系管理员"}, "nosignup": {"th": "ตอนนี้ระบบยังปิดการสมัครใหม่ ติดต่อผู้ดูแล", "en": "Sign-up is currently closed. Contact the administrator.", "zh": "目前暂不开放注册，请联系管理员"}, "unconf": {"th": "บัญชียังไม่ได้ยืนยันอีเมล ติดต่อผู้ดูแล", "en": "Email not confirmed. Contact the administrator.", "zh": "邮箱尚未确认，请联系管理员"}};
+const LGL=()=>{let l="th";try{l=localStorage.getItem("pi.ui")||"th"}catch(e){}return LGD.in[l]?l:"th"};
+const LG=k=>(LGD[k]||{})[LGL()]||(LGD[k]||{}).th||k;
+const TH_ERR=m=>/signups? not allowed/i.test(m)?LG("nosignup"):/email not confirmed/i.test(m)?LG("unconf"):/invalid login/i.test(m)?LG("bad"):/rate limit|too many/i.test(m)?LG("rate"):/banned|disabled/i.test(m)?LG("banned"):/database error|invalid_invite/i.test(m)?LG("badinvite"):m;
 function showLogin(){
   const run=()=>{
     const o=document.createElement("div");o.id="loginGate";
@@ -22,34 +25,36 @@ function showLogin(){
     const inp="width:100%;padding:13px 16px;font:inherit;font-size:16px;border:1px solid #d9dce5;border-radius:999px;margin-bottom:12px";
     const tab="flex:1;padding:10px;font:inherit;font-size:14px;font-weight:700;border:0;border-radius:999px;cursor:pointer;background:transparent;color:#6b6860";
     o.innerHTML=`<form id="lgForm" style="background:#fff;border-radius:28px;box-shadow:0 2px 4px rgba(19,32,60,.06),0 18px 40px rgba(19,32,60,.16);padding:28px;max-width:400px;width:100%;color:#1a1916">
-      <div style="font-size:13px;font-weight:700;color:#13203c">📋 Product Ingredient</div>
+      <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:13px;font-weight:700;color:#13203c">📋 Product Ingredient</div><div id="lgLang" style="display:flex;gap:2px;background:#eef1f7;border-radius:999px;padding:2px">${["th","en","zh"].map(l=>`<button type="button" data-l="${l}" style="border:0;border-radius:999px;padding:4px 9px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;background:${LGL()===l?"#fff":"transparent"};color:${LGL()===l?"#13203c":"#6b6860"}">${{th:"ไทย",en:"EN",zh:"中文"}[l]}</button>`).join("")}</div></div>
       <div style="display:flex;gap:4px;background:#eef1f7;border-radius:999px;padding:4px;margin:14px 0 18px" role="tablist">
-        <button type="button" id="tbIn" role="tab" style="${tab}">เข้าสู่ระบบ</button><button type="button" id="tbUp" role="tab" style="${tab}">สมัครใช้งาน</button></div>
+        <button type="button" id="tbIn" role="tab" style="${tab}">${LG("in")}</button><button type="button" id="tbUp" role="tab" style="${tab}">${LG("up")}</button></div>
       <h2 id="lgTitle" style="font-size:24px;margin:0 0 4px;color:#13203c"></h2>
       <p id="lgSub" style="font-size:14px;color:#6b6860;margin-bottom:16px"></p>
-      <input id="lgName" type="text" autocomplete="name" placeholder="ชื่อที่แสดง (เช่น ชื่อ-นามสกุล)" style="${inp}">
-      <input id="lgEmail" type="email" required autocomplete="username" placeholder="อีเมล" style="${inp}">
-      <input id="lgPw" type="password" required autocomplete="current-password" placeholder="รหัสผ่าน" style="${inp}">
-      <input id="lgPw2" type="password" autocomplete="new-password" placeholder="พิมพ์รหัสผ่านอีกครั้ง" style="${inp}">
+      <input id="lgName" type="text" autocomplete="name" placeholder="${LG("name")}" style="${inp}">
+      <input id="lgEmail" type="email" required autocomplete="username" placeholder="${LG("email")}" style="${inp}">
+      <input id="lgPw" type="password" required autocomplete="current-password" placeholder="${LG("pw")}" style="${inp}">
+      <input id="lgPw2" type="password" autocomplete="new-password" placeholder="${LG("pw2")}" style="${inp}">
+      <input id="lgInv" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${LG("invite")}" style="${inp}">
       <button id="lgBtn" type="submit" style="width:100%;padding:13px;font:inherit;font-size:15px;font-weight:700;color:#fff;background:linear-gradient(180deg,#2a4278,#13203c);border:0;border-radius:999px;box-shadow:0 6px 16px rgba(19,32,60,.3);cursor:pointer"></button>
       <p id="lgMsg" role="status" style="font-size:13px;margin-top:14px;min-height:20px;color:#c0392b"></p></form>`;
     document.body.appendChild(o);
+    o.querySelector("#lgLang").onclick=e=>{const b=e.target.closest("button[data-l]");if(!b)return;try{localStorage.setItem("pi.ui",b.dataset.l)}catch(x){}o.remove();showLogin()};
     const $$=s=>o.querySelector(s),m=$$("#lgMsg"),b=$$("#lgBtn");let mode="in";
     const setMode=md=>{mode=md;const up=md==="up";
       $$("#tbIn").style.background=up?"transparent":"#fff";$$("#tbIn").style.color=up?"#6b6860":"#13203c";$$("#tbIn").style.boxShadow=up?"none":"0 2px 6px rgba(19,32,60,.12)";
       $$("#tbUp").style.background=up?"#fff":"transparent";$$("#tbUp").style.color=up?"#13203c":"#6b6860";$$("#tbUp").style.boxShadow=up?"0 2px 6px rgba(19,32,60,.12)":"none";
-      $$("#lgTitle").textContent=up?"สมัครใช้งาน":"เข้าสู่ระบบ";$$("#lgSub").textContent=up?"ใช้อีเมลของคุณ และตั้งรหัสผ่านอย่างน้อย 8 ตัวอักษร":"ใช้อีเมลและรหัสผ่านที่สมัครไว้";
+      $$("#lgTitle").textContent=LG(up?"up":"in");$$("#lgSub").textContent=LG(up?"subUp":"subIn");$$("#lgInv").style.display=up?"":"none";
       $$("#lgName").style.display=up?"":"none";$$("#lgPw2").style.display=up?"":"none";$$("#lgPw2").required=up;
-      $$("#lgPw").autocomplete=up?"new-password":"current-password";b.textContent=up?"สมัครและเข้าใช้งาน":"เข้าสู่ระบบ";m.textContent=""};
+      $$("#lgPw").autocomplete=up?"new-password":"current-password";b.textContent=LG(up?"btnUp":"in");m.textContent=""};
     $$("#tbIn").onclick=()=>setMode("in");$$("#tbUp").onclick=()=>setMode("up");setMode("in");
     o.querySelector("#lgForm").onsubmit=async ev=>{ev.preventDefault();m.style.color="#c0392b";m.textContent="";
       const email=$$("#lgEmail").value.trim(),pw=$$("#lgPw").value;
-      if(mode==="up"){if(pw.length<8){m.textContent="รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร";return}if(pw!==$$("#lgPw2").value){m.textContent="รหัสผ่านสองช่องไม่ตรงกัน";return}}
-      b.disabled=true;const old=b.textContent;b.textContent="กำลังดำเนินการ…";
-      let r;if(mode==="up")r=await sb.auth.signUp({email,password:pw,options:{data:{name:$$("#lgName").value.trim()}}});
+      if(mode==="up"){if(pw.length<8){m.textContent=LG("short");return}if(pw!==$$("#lgPw2").value){m.textContent=LG("mismatch");return}if(!$$("#lgInv").value.trim()){m.textContent=LG("noinvite");return}}
+      b.disabled=true;const old=b.textContent;b.textContent=LG("busy");
+      let r;if(mode==="up")r=await sb.auth.signUp({email,password:pw,options:{data:{name:$$("#lgName").value.trim(),invite:$$("#lgInv").value.trim()}}});
       else r=await sb.auth.signInWithPassword({email,password:pw});
-      if(r.error){m.textContent=/already registered|already exists/i.test(r.error.message)?"อีเมลนี้สมัครไว้แล้ว กด “เข้าสู่ระบบ”":TH_ERR(r.error.message);b.disabled=false;b.textContent=old;return}
-      if(mode==="up"&&!(r.data&&r.data.session)){m.style.color="#1d6f42";m.textContent="สมัครแล้ว กรุณายืนยันอีเมลจากกล่องจดหมาย แล้วกลับมาเข้าสู่ระบบ";b.disabled=false;b.textContent=old;setMode("in");return}
+      if(r.error){m.textContent=/already registered|already exists/i.test(r.error.message)?LG("exists"):TH_ERR(r.error.message);b.disabled=false;b.textContent=old;return}
+      if(mode==="up"&&!(r.data&&r.data.session)){m.style.color="#1d6f42";m.textContent=LG("confirm");b.disabled=false;b.textContent=old;setMode("in");return}
       location.reload()};
   };
   document.body?run():document.addEventListener("DOMContentLoaded",run);
@@ -72,13 +77,21 @@ function openPassword(){
     if(a.length<8){m.textContent="รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร";m.style.color="#c0392b";return}if(a!==b){m.textContent="รหัสผ่านสองช่องไม่ตรงกัน";m.style.color="#c0392b";return}
     const{error}=await sb.auth.updateUser({password:a});m.style.color=error?"#c0392b":"#1d6f42";m.textContent=error?TH_ERR(error.message):"เปลี่ยนรหัสผ่านแล้ว"}}
 function openUsers(){
-  const o=modal(`<div class="mdh"><b>👤 จัดการผู้ใช้</b><button class="btn" data-x>ปิด</button></div><div class="mdb"><div class="hm-sec" style="box-shadow:none;margin-bottom:12px"><b style="font-size:14px">เพิ่มผู้ใช้ใหม่</b>
+  const o=modal(`<div class="mdh"><b>👤 จัดการผู้ใช้</b><button class="btn" data-x>ปิด</button></div><div class="mdb"><div class="hm-sec" style="box-shadow:none;margin-bottom:12px"><b style="font-size:14px">🔐 รหัสเชิญสำหรับสมัครใช้งาน</b>
+    <div class="note" style="margin:4px 0 8px">คนที่จะสมัครเองต้องใส่รหัสนี้ แจกเฉพาะคนที่อนุญาต ถ้ารหัสหลุด กด “สุ่มรหัสใหม่” (คนที่สมัครแล้วไม่ได้รับผลกระทบ)</div>
+    <div class="row"><input type="text" id="invCode" readonly style="font-family:ui-monospace,Menlo,monospace;font-size:15px;letter-spacing:.5px"><button class="btn" id="invCopy" type="button">คัดลอก</button><button class="btn" id="invNew" type="button">สุ่มรหัสใหม่</button></div>
+    <div class="note" id="invMsg" role="status"></div></div>
+    <div class="hm-sec" style="box-shadow:none;margin-bottom:12px"><b style="font-size:14px">เพิ่มผู้ใช้ใหม่</b>
     <div class="row" style="margin-top:8px"><input type="text" id="nuName" placeholder="ชื่อที่แสดง"><input type="email" id="nuEmail" placeholder="อีเมล"></div>
     <div class="row"><input type="text" id="nuPw" placeholder="รหัสผ่านเริ่มต้น (8 ตัวขึ้นไป)"><button class="btn" id="nuGen" type="button">สุ่มรหัส</button><button class="btn p" id="nuAdd" type="button">เพิ่มผู้ใช้</button></div>
     <div class="note" id="nuMsg" role="status"></div></div><div id="usList"><p class="note">กำลังโหลด…</p></div></div>`);
   const msg=(t,bad)=>{const m=o.querySelector("#nuMsg");m.textContent=t;m.style.color=bad?"#c0392b":"#1d6f42"};
   const load=async()=>{const L=o.querySelector("#usList");try{const{users}=await fn("admin-users",{action:"list"});
     L.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px"><tr><th align=left>ผู้ใช้</th><th align=left>เข้าล่าสุด</th><th></th></tr>${users.map(u=>`<tr style="border-top:1px solid #e2e0d8"><td><b>${E(u.name)}</b>${u.role==="admin"?" · ผู้ดูแล":""}${u.disabled?' · <span style="color:#c0392b">ปิดใช้งาน</span>':""}<div class="note" style="margin:0">${E(u.email)}</div></td><td>${u.last_sign_in_at?E(new Date(u.last_sign_in_at).toLocaleString("th-TH",{dateStyle:"short",timeStyle:"short"})):"-"}</td><td style="text-align:right;white-space:nowrap"><button class="btn" data-rs="${u.id}">ตั้งรหัสใหม่</button> <button class="btn" data-ds="${u.id}" data-v="${u.disabled?0:1}">${u.disabled?"เปิดใช้งาน":"ปิดใช้งาน"}</button> <button class="btn del" data-dl="${u.id}">ลบ</button></td></tr>`).join("")}</table>`}catch(e){L.innerHTML='<p class="note">โหลดไม่สำเร็จ: '+E(ADM_ERR[e.code]||e.message)+"</p>"}};
+  const loadCode=async()=>{try{const{code}=await fn("admin-users",{action:"getcode"});o.querySelector("#invCode").value=code||""}catch(e){o.querySelector("#invMsg").textContent="โหลดรหัสเชิญไม่สำเร็จ"}};
+  o.querySelector("#invCopy").onclick=async()=>{const v=o.querySelector("#invCode").value;try{await navigator.clipboard.writeText(v);o.querySelector("#invMsg").textContent="คัดลอกรหัสแล้ว"}catch(e){o.querySelector("#invCode").select();o.querySelector("#invMsg").textContent="กด Ctrl+C เพื่อคัดลอก"}};
+  o.querySelector("#invNew").onclick=async()=>{try{const{code}=await fn("admin-users",{action:"setcode",random:true});o.querySelector("#invCode").value=code;o.querySelector("#invMsg").textContent="สร้างรหัสใหม่แล้ว รหัสเก่าใช้ไม่ได้อีก"}catch(e){o.querySelector("#invMsg").textContent="สร้างรหัสไม่สำเร็จ"}};
+  loadCode();
   o.querySelector("#nuGen").onclick=()=>{o.querySelector("#nuPw").value=genPw()};
   o.querySelector("#nuAdd").onclick=async()=>{const email=o.querySelector("#nuEmail").value.trim(),pw=o.querySelector("#nuPw").value,name=o.querySelector("#nuName").value.trim();
     try{await fn("admin-users",{action:"create",email,password:pw,name});msg("เพิ่มผู้ใช้แล้ว แจ้งอีเมลและรหัสผ่านให้ผู้ใช้ (ให้เปลี่ยนรหัสเองภายหลังได้)");o.querySelector("#nuEmail").value="";o.querySelector("#nuName").value="";load()}catch(e){msg(ADM_ERR[e.code]||(e.code==="409"?"":e.message),true)}};
@@ -89,17 +102,17 @@ function openUsers(){
     catch(e){msg(ADM_ERR[e.code]||e.message,true)}});
   load()}
 document.addEventListener("DOMContentLoaded",()=>{ready.then(ok=>{if(!ok)return;const ft=document.querySelector(".hm-ft");if(!ft)return;const go=ft.querySelector(".hm-note")||null;
-  const mk=(t,fnc)=>{const b=document.createElement("button");b.className="btn";b.textContent=t;b.onclick=fnc;ft.insertBefore(b,go);return b};
-  if(PROF&&PROF.role==="admin")mk("👤 จัดการผู้ใช้",openUsers);
-  mk("🔑 รหัสผ่าน",openPassword);
+  const mk=(k,fnc)=>{const b=document.createElement("button");b.className="btn";b.dataset.i=k;b.textContent=(window.t?window.t(k):k);b.onclick=fnc;ft.insertBefore(b,go);return b};
+  if(PROF&&PROF.role==="admin")mk("users",openUsers);
+  mk("pw",openPassword);
   if(PROF&&PROF.role==="admin"&&window.__MIGRATE)fetch(window.__MIGRATE,{method:"HEAD",cache:"no-store"}).then(r=>{if(r.ok){const b=mk("📥 นำเข้าข้อมูลเดิม",async()=>{b.disabled=true;b.textContent="กำลังนำเข้า…";
     try{const d=await(await fetch(window.__MIGRATE,{cache:"no-store"})).json();let n=0;
       for(const it of d.ingredients){await dbApi.doc("ingredients/"+it.id).set(it.meta);await dbApi.doc("ingredients/"+it.id+"/data/main").set({json:it.json});for(const k of Object.keys(it.photos||{}))await dbApi.doc("ingredients/"+it.id+"/photos/"+k).set({src:it.photos[k]});n++}
       for(const l of d.logos||[])await dbApi.doc("brandlogos/"+safe(l.name)).set({name:l.name,src:l.src});
       b.textContent="✔ นำเข้าแล้ว "+n+" รายการ";setTimeout(()=>location.reload(),1500)}
     catch(e){b.disabled=false;b.textContent="นำเข้าไม่สำเร็จ ลองอีกครั้ง";console.error(e)}})}}).catch(()=>{});
-  mk("ออกจากระบบ",logout);
-  const tb=document.getElementById("tbMenu")||document.getElementById("topbar");if(tb){const b=document.createElement("button");b.className="btn";b.textContent="ออกจากระบบ";b.title="ออกจากระบบ";b.onclick=logout;tb.appendChild(b)}})});
+  mk("logout",logout);
+  const tb=document.getElementById("tbMenu")||document.getElementById("topbar");if(tb){const b=document.createElement("button");b.className="btn";b.dataset.i="logout";b.textContent=(window.t?window.t("logout"):"ออกจากระบบ");b.onclick=logout;tb.appendChild(b)}})});
 
 /* ---------- db shim (document/collection API over tables) ---------- */
 const P=p=>String(p).split("/");
