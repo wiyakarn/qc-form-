@@ -272,6 +272,12 @@ document.addEventListener("DOMContentLoaded",()=>{ready.then(ok=>{if(!ok)return;
   const mk=(t,fnc)=>{const b=document.createElement("button");b.className="btn";b.textContent=t;b.onclick=fnc;ft.insertBefore(b,go);return b};
   if(PROF&&PROF.role==="admin")mk("👤 จัดการผู้ใช้",openUsers);
   mk("🔑 รหัสผ่าน",openPassword);
+  if(PROF&&PROF.role==="admin"&&window.__MIGRATE)fetch(window.__MIGRATE,{method:"HEAD",cache:"no-store"}).then(r=>{if(r.ok){const b=mk("📥 นำเข้าข้อมูลเดิม",async()=>{b.disabled=true;b.textContent="กำลังนำเข้า…";
+    try{const d=await(await fetch(window.__MIGRATE,{cache:"no-store"})).json();let n=0;
+      for(const it of d.ingredients){await dbApi.doc("ingredients/"+it.id).set(it.meta);await dbApi.doc("ingredients/"+it.id+"/data/main").set({json:it.json});for(const k of Object.keys(it.photos||{}))await dbApi.doc("ingredients/"+it.id+"/photos/"+k).set({src:it.photos[k]});n++}
+      for(const l of d.logos||[])await dbApi.doc("brandlogos/"+safe(l.name)).set({name:l.name,src:l.src});
+      b.textContent="✔ นำเข้าแล้ว "+n+" รายการ";setTimeout(()=>location.reload(),1500)}
+    catch(e){b.disabled=false;b.textContent="นำเข้าไม่สำเร็จ ลองอีกครั้ง";console.error(e)}})}}).catch(()=>{});
   mk("ออกจากระบบ",logout);
   const tb=document.getElementById("topbar");if(tb){const b=document.createElement("button");b.className="btn";b.textContent="ออกจากระบบ";b.title="ออกจากระบบ";b.onclick=logout;tb.appendChild(b)}})});
 
