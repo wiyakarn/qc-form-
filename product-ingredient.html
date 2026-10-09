@@ -71,6 +71,18 @@ body{font-family:Sarabun,"Noto Sans Thai",Tahoma,sans-serif;background:var(--bg)
 .hm-pill{box-shadow:var(--sh1);border-color:transparent}
 .hm-lg img{filter:drop-shadow(0 2px 3px rgba(19,32,60,.18))}
 .hm-hd h2{text-shadow:0 1px 0 #fff}
+/* ความกลมมน */
+.hm-card,.hm-sec{border-radius:28px}.hm-k{border-radius:26px}.hm-card .ic{border-radius:50%;width:46px;height:46px}
+.hm-ft .btn,.hm-it .btn,.hm-flt{border-radius:999px}.hm-it .btn{padding-left:16px;padding-right:16px}.hm-it .btn.ic1{width:38px;height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.hm-pill{border-radius:999px}.hm-it img{border-radius:50%;background:#fff;padding:3px;height:36px;width:36px;box-shadow:0 2px 6px rgba(19,32,60,.15);object-fit:contain}
+.hm-k::before{display:none}.hm-k{padding-top:18px}.hm-k::after{content:"";position:absolute;right:-18px;top:-18px;width:78px;height:78px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#dfe6f5,#b9c7e3);opacity:.55}
+.hm-dn{display:flex;justify-content:center;margin:2px 0 12px}.hm-donut{position:relative;width:150px;height:150px;border-radius:50%;box-shadow:0 8px 20px rgba(19,32,60,.18),inset 0 0 0 1px rgba(255,255,255,.4)}
+.hm-donut::before{content:"";position:absolute;inset:26px;border-radius:50%;background:linear-gradient(180deg,#fff,#f3f5fa);box-shadow:inset 0 2px 6px rgba(19,32,60,.15)}
+.hm-donut>div{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1}.hm-donut b{font-size:30px;line-height:1;color:#13203c}.hm-donut small{font-size:12px;color:var(--tx2)}
+.hm-br{border-radius:999px;padding:7px 12px}.hm-br .dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.hm-br .tr i{background:#13203c}.hm-br .nm img{border-radius:50%;background:#fff;height:20px;width:20px;padding:1px}
+.hm-empty .hm-steps div{border-radius:20px}
+@media(max-width:900px){.hm-card,.hm-sec{border-radius:24px}}
 @media print{#home{display:none!important}}
 .panel h1{font-size:16px;margin-bottom:10px}
 .panel h1{margin-bottom:8px}
@@ -189,6 +201,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
       <div class="hm-sec">
         <div class="hm-h"><b>รายการต่อแบรนด์</b></div>
         <p class="hm-help">กดแบรนด์เพื่อดูเฉพาะแบรนด์นั้น</p>
+        <div class="hm-dn" id="hmDn" hidden><div class="hm-donut" id="hmDonut"><div><b id="hmDnN">0</b><small>รายการ</small></div></div></div>
         <div id="hmBars" class="hm-bars"></div>
       </div>
     </div>
@@ -1136,7 +1149,9 @@ async function renderHome(){
    const nb=Object.keys(cnt).length,df=items.reduce((n,x)=>n+((x.defects||[]).length),0),ph=items.reduce((n,x)=>n+(x.photoCount||0),0);
    $("hmKpi").innerHTML=[["รายการในคลัง",items.length,"สินค้าที่บันทึกไว้ทั้งหมด"],["อัปเดตใน 7 วัน",items.filter(x=>(x.updated||0)>=wk).length,"แก้ไขหรือเพิ่มใหม่"],["แบรนด์ที่มีข้อมูล",nb,"จาก "+allBrands().length+" แบรนด์"]].map(k=>`<div class="hm-k"><small>${k[0]}</small><b>${k[1]}</b><span>${k[2]}</span></div>`).join("");
    const rows=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||a.localeCompare(b)).slice(0,6),mx=Math.max(1,...rows.map(b=>cnt[b]));
-   $("hmBars").innerHTML=rows.length?rows.map(b=>{const l=logoOf(b);return `<button class="hm-br${HF.brand===b?" on":""}" data-b="${esc(b)}" title="${esc(b)}: ${cnt[b]} รายการ"><span class="nm">${l?`<img src="${l}" alt="">`:""}${esc(b)}</span><span class="tr"><i style="width:${Math.round(cnt[b]/mx*100)}%"></i></span><span class="ct">${cnt[b]}</span></button>`}).join(""):'<p class="note">ยังไม่มีข้อมูล เมื่อบันทึกสินค้าแล้วจะแสดงที่นี่</p>';
+   const SH=["#13203c","#2f4a85","#5b7bc0","#93a9d6","#b9c7e3","#d5ddee"],tot=rows.reduce((n,b)=>n+cnt[b],0),oth=Object.keys(cnt).reduce((n,b)=>n+cnt[b],0)-tot;
+   {let acc=0;const seg=rows.map((b,i)=>{const a0=acc/Math.max(1,tot+oth)*100;acc+=cnt[b];return SH[i]+" "+a0+"% "+(acc/Math.max(1,tot+oth)*100)+"%"});if(oth>0)seg.push("#e6e9f1 "+(acc/(tot+oth)*100)+"% 100%");$("hmDonut").style.background=rows.length?"conic-gradient("+seg.join(",")+")":"#e6e9f1";$("hmDnN").textContent=tot+oth;$("hmDn").hidden=!rows.length}
+   $("hmBars").innerHTML=rows.length?rows.map((b,i)=>{const l=logoOf(b);return `<button class="hm-br${HF.brand===b?" on":""}" data-b="${esc(b)}" title="${esc(b)}: ${cnt[b]} รายการ"><span class="nm"><i class="dot" style="background:${SH[i]}"></i>${l?`<img src="${l}" alt="">`:""}${esc(b)}</span><span class="tr"><i style="width:${Math.round(cnt[b]/mx*100)}%;background:${SH[i]}"></i></span><span class="ct">${cnt[b]}</span></button>`}).join(""):'<p class="note">ยังไม่มีข้อมูล เมื่อบันทึกสินค้าแล้วจะแสดงที่นี่</p>';
    const fl=$("hmFlt");fl.hidden=!HF.brand;fl.innerHTML=HF.brand?`<span>กำลังดูเฉพาะแบรนด์ <b>${esc(HF.brand)}</b></span><a data-clearf>ดูทั้งหมด</a>`:""}
   const f=HF.brand?items.filter(x=>(x.brands||[]).includes(HF.brand)):items;
   f.sort((a,b)=>(b.updated||0)-(a.updated||0));
