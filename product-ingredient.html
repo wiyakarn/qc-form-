@@ -141,7 +141,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
   </div>
   <div id="lists"></div>
   <div class="sec"><b>คลังข้อมูล (แบรนด์ → หัวข้อ → ตำหนิ)</b>
-    <div class="bar" style="margin-top:0"><button class="btn p" onclick="saveToLib()">💾 บันทึกเข้าคลัง</button><button class="btn" onclick="openLib()">📚 เปิดคลัง</button><button class="btn del" id="delCur" onclick="deleteCurrent()" disabled>🗑 ลบรายการนี้ออกจากคลัง</button><label class="note" style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="libAuto" checked> บันทึกลงคลังอัตโนมัติ</label></div>
+    <div class="bar" style="margin-top:0"><button class="btn p" onclick="saveToLib()">💾 บันทึกเข้าคลัง</button><button class="btn" onclick="openLib()">📚 เปิดคลัง</button><button class="btn" onclick="dupItem()" title="ทำสำเนาข้อมูลชุดนี้เป็นรายการใหม่ แล้วแก้ไขต่อ">⧉ ทำสำเนา</button><button class="btn del" id="delCur" onclick="deleteCurrent()" disabled>🗑 ลบรายการนี้ออกจากคลัง</button><label class="note" style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="libAuto" checked> บันทึกลงคลังอัตโนมัติ</label></div>
     <div class="note" id="libSt"></div><div class="note" id="libKind"></div>
   </div>
   <div class="sec"><b>ดาวน์โหลด / ส่ง</b>
@@ -806,6 +806,12 @@ function restoreS(js,ph,extra){
   S.photos=S.photos.filter(Boolean);PHK.forEach(k=>S[k].forEach(r=>{if(r[2])r[2]=r[2].filter(Boolean)}));
   fieldsUI();listsUI();brandsUI();phUI();render();
 }
+function dupItem(fromLib){
+  delete S.recId;delete S.recUpd;if(window.__cloud)window.__cloud.lastLibH="";
+  save();libDelUI();const c=$("code");if(c){c.focus();c.select&&c.select()}
+  $("libSt").textContent="⧉ ทำสำเนาแล้ว: ข้อมูลและรูปถูกคัดลอกเป็นรายการใหม่ แก้รหัส/ชื่อสินค้า/ค่าที่ต่างกัน แล้วกด “บันทึกเข้าคลัง” (รายการเดิมไม่ถูกแก้)";
+  if(window.__cloud)window.__cloud.track("copy",{code:S.code,name:S.nameTh,from:fromLib?"library":"form"});
+}
 async function saveToLib(){
   const st=$("libSt");
   if(!S.brands.length){st.textContent="เลือกแบรนด์อย่างน้อย 1 แบรนด์ก่อนบันทึก";return}
@@ -828,7 +834,7 @@ async function openLib(){
     const q=($("libQ").value||"").toLowerCase(),match=it=>!q||[it.code,it.nameTh,it.nameEn,it.menu,...(it.brands||[]),...(it.defects||[]).map(d=>d[0])].join(" ").toLowerCase().includes(q);
     const by={};items.filter(match).forEach(it=>(it.brands&&it.brands.length?it.brands:["ไม่ระบุแบรนด์"]).forEach(b=>{((by[b]=by[b]||{})[it.menu||"ไม่ระบุหัวข้อ"]=by[b][it.menu||"ไม่ระบุหัวข้อ"]||[]).push(it)}));
     const order=[...allBrands(),"ไม่ระบุแบรนด์"].filter(b=>by[b]);
-    $("libB").innerHTML=order.length?order.map(b=>{const l=logoOf(b);return `<details class="lb" open><summary>${l?`<img src="${l}" style="height:22px;vertical-align:middle;margin-right:6px">`:""}<b>${esc(b)}</b> <span class="note">${Object.values(by[b]).reduce((n,a)=>n+a.length,0)} รายการ</span></summary>${Object.keys(by[b]).sort().map(m=>`<div class="lm">${esc(m)}</div>${by[b][m].map(it=>`<div class="li" data-id="${it.id}"><div class="rr" style="margin:0"><input type="checkbox" class="lsel" data-sel="${it.id}" ${SEL.has(it.id)?"checked":""} aria-label="เลือกรายการนี้"><div style="flex:1;min-width:0"><b>${esc(it.code)} ${esc(it.nameTh)}</b><div class="note" style="margin:0">ตำหนิ ${(it.defects||[]).length} · รูป ${it.photoCount||0}</div></div><button class="btn" data-open="${it.id}">เปิด</button><button class="btn" data-def="${it.id}">ตำหนิ ▾</button><button class="btn del" data-rm="${it.id}">🗑 ลบ</button></div><div class="ld" id="ld-${it.id}-${esc(b).replace(/\W/g,"_")}" hidden></div></div>`).join("")}`).join("")}</details>`}).join(""):'<p class="note">ยังไม่มีข้อมูลในคลัง กด “บันทึกเข้าคลัง” ในหน้าฟอร์ม</p>';
+    $("libB").innerHTML=order.length?order.map(b=>{const l=logoOf(b);return `<details class="lb" open><summary>${l?`<img src="${l}" style="height:22px;vertical-align:middle;margin-right:6px">`:""}<b>${esc(b)}</b> <span class="note">${Object.values(by[b]).reduce((n,a)=>n+a.length,0)} รายการ</span></summary>${Object.keys(by[b]).sort().map(m=>`<div class="lm">${esc(m)}</div>${by[b][m].map(it=>`<div class="li" data-id="${it.id}"><div class="rr" style="margin:0"><input type="checkbox" class="lsel" data-sel="${it.id}" ${SEL.has(it.id)?"checked":""} aria-label="เลือกรายการนี้"><div style="flex:1;min-width:0"><b>${esc(it.code)} ${esc(it.nameTh)}</b><div class="note" style="margin:0">ตำหนิ ${(it.defects||[]).length} · รูป ${it.photoCount||0}</div></div><button class="btn" data-open="${it.id}">เปิด</button><button class="btn" data-copy="${it.id}" title="คัดลอกเป็นรายการใหม่แล้วแก้ไข">⧉ คัดลอก</button><button class="btn" data-def="${it.id}">ตำหนิ ▾</button><button class="btn del" data-rm="${it.id}">🗑 ลบ</button></div><div class="ld" id="ld-${it.id}-${esc(b).replace(/\W/g,"_")}" hidden></div></div>`).join("")}`).join("")}</details>`}).join(""):'<p class="note">ยังไม่มีข้อมูลในคลัง กด “บันทึกเข้าคลัง” ในหน้าฟอร์ม</p>';
   };
   draw();bar();$("libQ").oninput=()=>{draw();bar()};
   const msg=(m,bad)=>{const e=$("libMsg");e.textContent=m;e.style.color=bad?"var(--red)":"var(--grn)"};
@@ -848,6 +854,8 @@ async function openLib(){
     if(d.open){const js=await Lib.json(d.open);if(!js)return;const ph=await Lib.photos(d.open),it=items.find(x=>x.id===d.open)||{};
       restoreS(js,ph,{recId:d.open,recUpd:it.updated||0});closeOv("ov3");save();
       if(window.__cloud)window.__cloud.track("open-item",{code:it.code,name:it.nameTh});return}
+    if(d.copy){const js=await Lib.json(d.copy);if(!js)return;const ph=await Lib.photos(d.copy);
+      restoreS(js,ph,{});closeOv("ov3");dupItem(true);return}
     if(d.def){const box=t.closest(".li").querySelector(".ld");if(!box.hidden){box.hidden=true;return}
       const it=items.find(x=>x.id===d.def),ph=await Lib.photos(d.def);
       box.innerHTML=(it.defects||[]).length?(it.defects||[]).map((df,i)=>{const th=Object.keys(ph).filter(k=>k.startsWith(df[2]+"_"+df[4]+"_")).sort().map(k=>`<img src="${ph[k]}">`).join("");return `<div class="ldr"><b>${esc(df[0])}</b> ${df[3]?`<span class="note">${esc(df[3])}</span>`:""}<div class="dp" style="margin-left:0">${th}</div></div>`}).join(""):'<span class="note">ไม่มีข้อมูลตำหนิ</span>';
@@ -948,7 +956,7 @@ const Cloud=window.__cloud={uid:null,user:null,me:null,owner:false,db:null,on:fa
   const lr=Lib.remove.bind(Lib);Lib.remove=async function(id){let m={};try{if(Lib.db){const d=await Lib.db.doc("ingredients/"+id).get();if(d.exists)m={code:d.data().code,name:d.data().nameTh}}}catch(e){}await lr(id);Cloud.track("delete",m)};
 })();
 /* ===== แดชบอร์ดผู้ดูแล (เจ้าของลิงก์เท่านั้น) ===== */
-const ACT={open:"เข้าใช้งาน",new:"สินค้าใหม่",save:"บันทึกเข้าคลัง",autosave:"บันทึกอัตโนมัติ","open-item":"เปิดรายการ",delete:"ลบรายการ","import-spec":"แนบสเปค",translate:"แปลภาษา",export:"ดาวน์โหลด",logo:"เปลี่ยนโลโก้",guide:"เปิดคู่มือ",conflict:"ชนกันของการแก้ไข","restore-draft":"โหลดฉบับร่าง"};
+const ACT={open:"เข้าใช้งาน",new:"สินค้าใหม่",save:"บันทึกเข้าคลัง",autosave:"บันทึกอัตโนมัติ","open-item":"เปิดรายการ",delete:"ลบรายการ","import-spec":"แนบสเปค",translate:"แปลภาษา",export:"ดาวน์โหลด",logo:"เปลี่ยนโลโก้",guide:"เปิดคู่มือ",conflict:"ชนกันของการแก้ไข","restore-draft":"โหลดฉบับร่าง",copy:"ทำสำเนา"};
 async function openAdmin(){
   if(!Cloud.on||!Cloud.owner)return;closeOv("ov6");
   const o=document.createElement("div");o.id="ov6";o.className="ov";
@@ -1110,6 +1118,7 @@ function openGuide(){
    <ol><li>ติ๊กแบรนด์อย่างน้อย 1 แบรนด์ ใส่รหัสหรือชื่อสินค้า แล้วกด “💾 บันทึกเข้าคลัง”</li>
    <li>กด “📚 รายการที่บันทึกไว้” เพื่อค้นหา “เปิด” กลับมาแก้ไข ดูตำหนิพร้อมรูปด้วย “ตำหนิ ▾” หรือ “ลบ” (กดสองครั้งเพื่อยืนยัน)</li>
    <li><b>ลบรายงานที่ไม่ต้องการ:</b> ในคลังกด “🗑 ลบ” ที่รายการ (กดซ้ำเพื่อยืนยัน) หรือติ๊กหลายรายการแล้วกด “🗑 ลบที่เลือก” ถ้าเปิดรายการนั้นอยู่ในฟอร์ม กด “🗑 ลบรายการนี้ออกจากคลัง” ที่กล่องคลังข้อมูลได้เลย ลบแล้วกู้คืนไม่ได้</li>
+   <li><b>มีสินค้าคล้ายกัน:</b> กด “⧉ ทำสำเนา” ในฟอร์ม หรือ “⧉ คัดลอก” ที่รายการในคลัง ระบบจะคัดลอกข้อมูลและรูปเป็นรายการใหม่ ให้แก้เฉพาะส่วนที่ต่างแล้วบันทึกเข้าคลัง (รายการเดิมไม่เปลี่ยน)</li>
    <li>เปิดสินค้าจากคลังแล้วบันทึกซ้ำ = อัปเดตรายการเดิม ถ้าจะเก็บเป็นสินค้าใหม่ให้กด “＋ สินค้าใหม่” ก่อน</li></ol>
    <p>บนลิงก์ Claude คลังใช้ร่วมกันได้ตามสิทธิ์ของลิงก์ การบันทึกต้องมีสิทธิ์แก้ไข ส่วนไฟล์ HTML ในรีโปเก็บในเบราว์เซอร์เครื่องนั้นเท่านั้น</p></details>
   <details class="gd"><summary>8. ใช้หลายเครื่อง · บันทึกอัตโนมัติ · ผู้ดูแล</summary>
