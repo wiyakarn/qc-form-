@@ -11,6 +11,17 @@ body{font-family:Sarabun,"Noto Sans Thai",Tahoma,sans-serif;background:var(--bg)
 .app{display:grid;grid-template-columns:minmax(360px,450px) 1fr;min-height:100vh}
 .panel{background:var(--sur);border-right:1px solid var(--brd);padding:14px;overflow-y:auto;height:100vh;position:sticky;top:0}
 .panel h1{font-size:16px;margin-bottom:10px}
+.panel h1{margin-bottom:8px}
+.tb{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:0;z-index:20;background:var(--sur);margin:0 -14px 8px;padding:8px 14px;border-bottom:1px solid var(--brd);box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.tb .btn{padding:7px 11px;font-size:13px;min-height:34px}.tb .mob{display:none}
+.jump{display:flex;gap:4px 10px;flex-wrap:wrap;align-items:center;font-size:12px;margin:0 0 8px;color:var(--tx2)}
+.jump a{color:var(--grn);cursor:pointer;text-decoration:underline;text-underline-offset:2px}.jump a[data-all]{margin-left:auto;color:var(--tx2)}.jump a[data-all]+a[data-all]{margin-left:0}
+.sec>b{cursor:pointer;display:flex!important;justify-content:space-between;align-items:center;font-size:13px!important;padding:2px 0;margin-bottom:6px;user-select:none}
+.sec>b::after{content:"▾";font-size:12px;color:var(--tx2)}
+.sec.shut>b{margin-bottom:0}.sec.shut>b::after{content:"▸"}.sec.shut>*:not(b){display:none!important}
+.sec.flash{outline:2px solid var(--grn);outline-offset:1px}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.sec>b:focus-visible{outline:2px solid #1a73e8;outline-offset:1px}
+
 .sec{border:1px solid var(--brd);border-radius:var(--r);padding:10px;margin-bottom:10px}
 .sec>b{display:block;font-size:12px;color:var(--grn);margin-bottom:6px}
 label{display:block;font-size:11px;color:var(--tx2);margin:6px 0 2px}
@@ -81,6 +92,7 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
 .rvg{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(220px,1fr);gap:16px}.pvw{border:1px solid var(--brd);border-radius:6px;overflow:hidden;background:#fff;position:relative}
 .lb{border:1px solid var(--brd);border-radius:8px;margin-top:8px;padding:6px 10px}.lb summary{cursor:pointer;padding:2px 0}.lm{font-size:12px;font-weight:700;color:var(--grn);margin:8px 0 2px}.li{border-top:1px solid var(--brd);padding:6px 0}.ldr{padding:3px 0 2px 10px;font-size:12px}
 @media(max-width:700px){.rvg{grid-template-columns:minmax(0,1fr)}}.rvg>div{min-width:0}
+@media(max-width:900px){.tb{position:fixed;top:auto;bottom:0;left:0;right:0;margin:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));flex-wrap:nowrap;overflow-x:auto;border-top:1px solid var(--brd);border-bottom:0;box-shadow:0 -2px 10px rgba(0,0,0,.12);z-index:40}.tb .btn{flex:0 0 auto;min-height:40px;font-size:14px}.tb .mob{display:inline-block}.panel,.stage{padding-bottom:78px}input[type=text],input[type=number],textarea,select{font-size:16px;padding:9px 10px}.chip{padding:7px 12px;font-size:13px}.btn{min-height:36px;font-size:13px}}
 @media(max-width:900px){.pn{flex-wrap:wrap}.pn .pp{width:100%}.pn .pp img{flex:1;min-width:0;width:30%;height:auto;aspect-ratio:5/4}.pn .n{font-size:22px}.hd h2{font-size:28px}.hr{max-width:100%;align-items:flex-start}.logos{justify-content:flex-start}.sheet.x794 .hr{max-width:52%;align-items:flex-end}.sheet.x794 .logos{justify-content:flex-end}.app{grid-template-columns:1fr}.panel{height:auto;position:static}.sheet{padding:16px}}
 .sheet.x794{padding:28px 34px}.sheet.x794 .pn{flex-wrap:nowrap}.sheet.x794 .pn .pp{width:auto}.sheet.x794 .pn .pp img{flex:none;width:128px;height:104px;aspect-ratio:auto}.sheet.x794 .pn .n{font-size:26px}.sheet.x794 .hd h2{font-size:38px}
 @media print{body{background:#fff}.panel{display:none}.app{display:block}.stage{padding:0}.sheet{box-shadow:none;width:100%;padding:0}@page{size:A4;margin:12mm}}
@@ -90,7 +102,17 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
 <div class="app">
 <div class="panel">
   <h1>📋 Product Ingredient</h1>
-  <div class="bar" style="margin:0 0 8px"><button class="btn p" onclick="newItem()">＋ สินค้าใหม่</button><button class="btn" onclick="dupItem()" title="ทำสำเนาข้อมูลชุดนี้เป็นรายการใหม่ แล้วแก้ไขต่อ">⧉ ทำสำเนา</button><button class="btn" onclick="openLib()">📚 รายการที่บันทึกไว้</button><button class="btn gb" onclick="openGuide()">📖 คู่มือการใช้งาน</button><button class="btn" id="adminBtn" onclick="openAdmin()" hidden>👥 การใช้งานของผู้ใช้</button></div>
+  <div class="tb" id="topbar" role="toolbar" aria-label="เมนูหลัก">
+    <button class="btn" onclick="newItem()" title="เริ่มสินค้าใหม่">＋ ใหม่</button>
+    <button class="btn" onclick="dupItem()" title="ทำสำเนาข้อมูลชุดนี้เป็นรายการใหม่ แล้วแก้ไขต่อ">⧉ สำเนา</button>
+    <button class="btn p" onclick="saveToLib()" title="บันทึกเข้าคลัง">💾 บันทึก</button>
+    <button class="btn" onclick="openLib()" title="เปิดรายการที่บันทึกไว้">📚 คลัง</button>
+    <button class="btn p" onclick="openReview()" title="รีวิวและส่งไฟล์ (PDF / Word / PowerPoint / รูป)">⬇ ส่งออก</button>
+    <button class="btn mob" onclick="toggleView()" id="viewBtn">👁 ตัวอย่าง</button>
+    <button class="btn gb" onclick="openGuide()" title="คู่มือการใช้งาน">📖 คู่มือ</button>
+    <button class="btn" id="adminBtn" onclick="openAdmin()" hidden>👥 ผู้ใช้</button>
+  </div>
+  <div class="jump" id="jump"><span>ไปที่:</span><a data-j="แบรนด์">แบรนด์</a><a data-j="แนบสเปค">สเปค</a><a data-j="ข้อมูลสินค้า">สินค้า</a><a data-j="__lists">รายการ</a><a data-j="ดาวน์โหลด">ส่งออก</a><a data-all="0">ย่อทั้งหมด</a><a data-all="1">ขยายทั้งหมด</a></div>
   <div class="note" style="margin:0 0 8px"><span id="cloudChip">กำลังเชื่อมต่อ…</span> <span title="ระบบบันทึกเวลาเข้าใช้และการทำงาน เพื่อให้ผู้ดูแลตรวจสอบ">· 🛈 ระบบบันทึกเวลาเข้าใช้และการทำงานให้ผู้ดูแลตรวจสอบ</span></div>
   <div class="gbn" id="gdBanner" hidden><span>ใช้งานครั้งแรก? อ่านคู่มือสั้นๆ ก่อนเริ่ม</span><button class="btn p" onclick="openGuide()">เปิดคู่มือ</button><button class="btn x" onclick="hideGuideBanner()" aria-label="ปิดข้อความนี้">✕</button></div>
   <div class="sec"><b>แบรนด์ (เลือกได้หลายแบรนด์)</b>
@@ -104,21 +126,10 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
     <div style="font-size:11px;color:var(--tx2);margin-top:4px">โลโก้ที่อัปโหลดจะถูกจำไว้ และขึ้นอัตโนมัติทุกครั้ง · แสดงที่มุมขวาบนของฟอร์ม · แบรนด์ที่ยังไม่มีโลโก้จะแสดงเป็นชื่อ</div>
     </details>
   </div>
-  <div class="sec"><b>สี / เอกลักษณ์ของแบรนด์</b>
-    <div class="note" style="margin:0 0 6px">ดึงสีจากโลโก้อัตโนมัติ ใช้กับหัวเอกสาร เส้น แถบล่าง และไฟล์ที่ส่งออก</div>
-    <label>ใช้ธีมของแบรนด์</label><select id="thBrand"></select>
-    <div class="row" style="margin-top:6px"><label style="margin:0;flex:1">สีหลัก<br><input type="color" id="thAcc" style="width:100%;height:30px;padding:0"></label><label style="margin:0;flex:1">สีรอง (เส้นล่าง)<br><input type="color" id="thAcc2" style="width:100%;height:30px;padding:0"></label><label style="margin:0;flex:1">สีเข้ม<br><input type="color" id="thDk" style="width:100%;height:30px;padding:0"></label></div>
-    <div class="note" style="margin:8px 0 2px">สีที่พบในโลโก้ (กดเพื่อนำไปใช้เป็น)</div><div class="row"><select id="thRole" style="width:auto"><option value="acc">สีหลัก</option><option value="acc2">สีรอง</option><option value="dk">สีเข้ม</option></select><div id="thPal" style="display:flex;gap:4px;flex-wrap:wrap"></div></div>
-    <div class="bar"><button class="btn" onclick="resetTheme()">↻ ดึงสีจากโลโก้ใหม่</button></div>
-  </div>
   <div class="sec"><b>แนบสเปค</b>
     <div class="bar" style="margin-top:0"><button class="btn p" onclick="$('specFile').click()">📎 แนบสเปค (ทุกชนิดไฟล์)</button><button class="btn" onclick="$('specCam').click()">📷 ถ่ายรูปสเปค</button><button class="btn" onclick="openPaste()">วางข้อความ</button></div>
     <input type="file" id="specFile" multiple hidden><input type="file" id="specCam" accept="image/*" capture="environment" hidden>
     <div class="note">ระบบดึงข้อมูลที่ใช้ให้ แล้วให้ติ๊กเลือก/แก้ไข/เพิ่มเองได้ก่อนนำเข้าฟอร์ม</div>
-  </div>
-  <div class="sec"><b>ภาษา / แปลอัตโนมัติ</b>
-    <div class="row"><select id="viewLang"><option value="orig">ต้นฉบับ</option><option value="en">English</option><option value="th">ไทย</option><option value="zh">中文</option><option value="ja">日本語</option></select><button class="btn p" id="trBtn" onclick="doTranslate()">🌐 แปลอัตโนมัติ</button></div>
-    <div class="note" id="trSt"></div>
   </div>
   <div class="sec"><b>ข้อมูลสินค้า</b>
     <label>Effective Date <span style="float:right;cursor:pointer;color:var(--grn)" onclick="$('effDate').value=todayISO();S.effDate=todayISO();render()">วันนี้</span></label><input type="date" id="effDate">
@@ -140,6 +151,17 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
     <label>เลขที่ใบรับรองฮาลาล</label><input type="text" id="halalNo">
   </div>
   <div id="lists"></div>
+  <div class="sec"><b>ภาษา / แปลอัตโนมัติ</b>
+    <div class="row"><select id="viewLang"><option value="orig">ต้นฉบับ</option><option value="en">English</option><option value="th">ไทย</option><option value="zh">中文</option><option value="ja">日本語</option></select><button class="btn p" id="trBtn" onclick="doTranslate()">🌐 แปลอัตโนมัติ</button></div>
+    <div class="note" id="trSt"></div>
+  </div>
+  <div class="sec"><b>สี / เอกลักษณ์ของแบรนด์</b>
+    <div class="note" style="margin:0 0 6px">ดึงสีจากโลโก้อัตโนมัติ ใช้กับหัวเอกสาร เส้น แถบล่าง และไฟล์ที่ส่งออก</div>
+    <label>ใช้ธีมของแบรนด์</label><select id="thBrand"></select>
+    <div class="row" style="margin-top:6px"><label style="margin:0;flex:1">สีหลัก<br><input type="color" id="thAcc" style="width:100%;height:30px;padding:0"></label><label style="margin:0;flex:1">สีรอง (เส้นล่าง)<br><input type="color" id="thAcc2" style="width:100%;height:30px;padding:0"></label><label style="margin:0;flex:1">สีเข้ม<br><input type="color" id="thDk" style="width:100%;height:30px;padding:0"></label></div>
+    <div class="note" style="margin:8px 0 2px">สีที่พบในโลโก้ (กดเพื่อนำไปใช้เป็น)</div><div class="row"><select id="thRole" style="width:auto"><option value="acc">สีหลัก</option><option value="acc2">สีรอง</option><option value="dk">สีเข้ม</option></select><div id="thPal" style="display:flex;gap:4px;flex-wrap:wrap"></div></div>
+    <div class="bar"><button class="btn" onclick="resetTheme()">↻ ดึงสีจากโลโก้ใหม่</button></div>
+  </div>
   <div class="sec"><b>คลังข้อมูล (แบรนด์ → หัวข้อ → ตำหนิ)</b>
     <div class="bar" style="margin-top:0"><button class="btn p" onclick="saveToLib()">💾 บันทึกเข้าคลัง</button><button class="btn" onclick="openLib()">📚 เปิดคลัง</button><button class="btn del" id="delCur" onclick="deleteCurrent()" disabled>🗑 ลบรายการนี้ออกจากคลัง</button><label class="note" style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="libAuto" checked> บันทึกลงคลังอัตโนมัติ</label></div>
     <div class="note" id="libSt"></div><div class="note" id="libKind"></div>
@@ -990,6 +1012,23 @@ async function openAdmin(){
 Cloud.ready=Lib.init().then(()=>Cloud.init()).catch(()=>{});
 
 (function(){const d=$("logoBox");if(!d)return;try{d.open=localStorage.getItem("pi.logobox")==="1"}catch(e){}d.addEventListener("toggle",()=>{try{localStorage.setItem("pi.logobox",d.open?"1":"0")}catch(e){}})})();
+/* ===== ใช้งานง่าย: พับ/ขยายหัวข้อ · ไปที่ · สลับตัวอย่างบนมือถือ ===== */
+const SHUT_DEF=["สี / เอกลักษณ์ของแบรนด์","ภาษา / แปลอัตโนมัติ","คลังข้อมูล (แบรนด์ → หัวข้อ → ตำหนิ)","ข้อควรระวัง (หนึ่งข้อต่อบรรทัด)","ตัวอย่างข้อมูล / จัดการ"];
+let SHUT={};try{SHUT=JSON.parse(localStorage.getItem("pi.shut")||"{}")}catch(e){}
+const secTitle=e=>(e.querySelector(":scope>b")||{}).textContent||"";
+function applyShut(){document.querySelectorAll(".panel .sec").forEach(e=>{const t=secTitle(e),v=t in SHUT?SHUT[t]:SHUT_DEF.includes(t);e.classList.toggle("shut",!!v);const b=e.querySelector(":scope>b");if(b){b.tabIndex=0;b.setAttribute("role","button");b.setAttribute("aria-expanded",v?"false":"true")}})}
+function setShut(e,v){const t=secTitle(e);SHUT[t]=v;try{localStorage.setItem("pi.shut",JSON.stringify(SHUT))}catch(x){}applyShut()}
+document.querySelector(".panel").addEventListener("click",ev=>{const b=ev.target.closest(".sec>b");if(b&&!ev.target.closest("button,a,input,select"))setShut(b.parentNode,!b.parentNode.classList.contains("shut"))});
+document.querySelector(".panel").addEventListener("keydown",ev=>{if((ev.key==="Enter"||ev.key===" ")&&ev.target.matches(".sec>b")){ev.preventDefault();ev.target.click()}});
+$("jump").addEventListener("click",ev=>{const a=ev.target.closest("a");if(!a)return;
+  if(a.dataset.all!==undefined){document.querySelectorAll(".panel .sec").forEach(e=>{SHUT[secTitle(e)]=a.dataset.all==="0"});try{localStorage.setItem("pi.shut",JSON.stringify(SHUT))}catch(x){}applyShut();return}
+  const secs=[...document.querySelectorAll(".panel .sec")],t=a.dataset.j;
+  const e=t==="__lists"?document.querySelector("#lists .sec"):secs.find(x=>secTitle(x).startsWith(t));if(!e)return;
+  setShut(e,false);e.scrollIntoView({behavior:"smooth",block:"start"});e.classList.add("flash");setTimeout(()=>e.classList.remove("flash"),1200)});
+function toggleView(){const st=document.querySelector(".stage"),b=$("viewBtn");const onSheet=b.dataset.on==="1";
+  if(onSheet){window.scrollTo({top:0,behavior:"smooth"});b.dataset.on="0";b.textContent="👁 ตัวอย่าง"}else{st.scrollIntoView({behavior:"smooth",block:"start"});b.dataset.on="1";b.textContent="✎ แก้ไข"}}
+{const lu=listsUI;listsUI=function(){const r=lu.apply(this,arguments);applyShut();return r}}
+applyShut();
 phUI();
 
 /* ===== ธีมสีตามโลโก้แบรนด์ ===== */
@@ -1073,6 +1112,7 @@ if(!guideSeen())$("gdBanner").hidden=false;
 function openGuide(){
   hideGuideBanner();closeOv("ov5");const o=document.createElement("div");o.id="ov5";o.className="ov";
   o.innerHTML=`<div class="md" role="dialog" aria-modal="true" aria-label="คู่มือการใช้งาน" style="max-width:780px"><div class="mdh"><b>📖 คู่มือการใช้งาน Product Ingredient</b><button class="btn" data-close>ปิด</button></div><div class="mdb">
+  <div class="gq"><b>ปุ่มหลักอยู่ที่แถบบนสุด</b> (บนมือถืออยู่แถบล่าง): ＋ ใหม่ · ⧉ สำเนา · 💾 บันทึก · 📚 คลัง · ⬇ ส่งออก · 📖 คู่มือ กดชื่อหัวข้อเพื่อพับ/ขยาย ใช้ “ไปที่: …” เพื่อข้ามไปหัวข้อที่ต้องการ และบนมือถือกด “👁 ตัวอย่าง” เพื่อดูเอกสาร</div>
   <div class="gq"><b>เริ่มใช้งานใน 5 ขั้นตอน</b><ol>
    <li>กด <b>“＋ สินค้าใหม่”</b> ที่ด้านบนของแถบซ้าย</li>
    <li>ติ๊กแบรนด์ (โลโก้และสีเอกสารขึ้นเอง) และใส่ <b>Effective Date</b></li>
