@@ -61,6 +61,11 @@ const ADM_ERR={weak_password:"รหัสผ่านต้องยาวอ�
 const genPw=()=>{const c="abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";const a=new Uint32Array(12);crypto.getRandomValues(a);return Array.from(a,x=>c[x%c.length]).join("")};
 function modal(html){const o=document.createElement("div");o.className="ov";o.style.zIndex=60;o.innerHTML=`<div class="md" role="dialog" aria-modal="true" style="max-width:760px">${html}</div>`;document.body.appendChild(o);o.addEventListener("click",e=>{if(e.target===o||e.target.closest("[data-x]"))o.remove()});return o}
 const E=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function logout(){
+  try{await sb.auth.signOut({scope:"local"})}catch(e){}
+  try{Object.keys(localStorage).filter(k=>/^sb-|supabase/.test(k)).forEach(k=>localStorage.removeItem(k))}catch(e){}
+  try{sessionStorage.clear()}catch(e){}
+  location.replace(location.pathname)}
 function openPassword(){
   const o=modal(`<div class="mdh"><b>🔑 เปลี่ยนรหัสผ่านของฉัน</b><button class="btn" data-x>ปิด</button></div><div class="mdb"><label>รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)</label><input type="password" id="pwA" autocomplete="new-password"><label>พิมพ์ซ้ำอีกครั้ง</label><input type="password" id="pwB" autocomplete="new-password"><div class="bar"><button class="btn p" id="pwGo">บันทึกรหัสผ่านใหม่</button></div><div class="note" id="pwMsg" role="status"></div></div>`);
   o.querySelector("#pwGo").onclick=async()=>{const a=o.querySelector("#pwA").value,b=o.querySelector("#pwB").value,m=o.querySelector("#pwMsg");
@@ -87,7 +92,8 @@ document.addEventListener("DOMContentLoaded",()=>{ready.then(ok=>{if(!ok)return;
   const mk=(t,fnc)=>{const b=document.createElement("button");b.className="btn";b.textContent=t;b.onclick=fnc;ft.insertBefore(b,go);return b};
   if(PROF&&PROF.role==="admin")mk("👤 จัดการผู้ใช้",openUsers);
   mk("🔑 รหัสผ่าน",openPassword);
-  mk("ออกจากระบบ",async()=>{await sb.auth.signOut();try{sessionStorage.clear()}catch(e){}location.reload()})})});
+  mk("ออกจากระบบ",logout);
+  const tb=document.getElementById("topbar");if(tb){const b=document.createElement("button");b.className="btn";b.textContent="ออกจากระบบ";b.title="ออกจากระบบ";b.onclick=logout;tb.appendChild(b)}})});
 
 /* ---------- db shim (document/collection API over tables) ---------- */
 const P=p=>String(p).split("/");
