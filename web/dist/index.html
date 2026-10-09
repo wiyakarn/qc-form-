@@ -407,6 +407,7 @@ window.claude={use:async n=>{const ok=await ready;if(!ok)return null;return n===
     <button class="btn p" onclick="saveToLib()" title="บันทึกเข้าคลัง">💾 บันทึก</button>
     <button class="btn" onclick="openLib()" title="เปิดรายการที่บันทึกไว้">📚 คลัง</button>
     <button class="btn p" onclick="openReview()" title="รีวิวและส่งไฟล์ (PDF / Word / PowerPoint / รูป)">⬇ ส่งออก</button>
+    <button class="btn del" id="delCur" onclick="deleteCurrent()" disabled title="ลบรายการที่เปิดอยู่ออกจากคลัง (เปิดรายการจากคลังก่อน)">🗑 ลบ</button>
     <button class="btn mob" onclick="toggleView()" id="viewBtn">👁 ตัวอย่าง</button>
     <button class="btn gb" onclick="openGuide()" title="คู่มือการใช้งาน">📖 คู่มือ</button>
     <button class="btn" id="adminBtn" onclick="openAdmin()" hidden>👥 ผู้ใช้</button>
@@ -461,7 +462,7 @@ window.claude={use:async n=>{const ok=await ready;if(!ok)return null;return n===
     <div class="bar"><button class="btn" onclick="resetTheme()">↻ ดึงสีจากโลโก้ใหม่</button></div>
   </div>
   <div class="sec"><b>คลังข้อมูล (แบรนด์ → หัวข้อ → ตำหนิ)</b>
-    <div class="bar" style="margin-top:0"><button class="btn del" id="delCur" onclick="deleteCurrent()" disabled>🗑 ลบรายการนี้ออกจากคลัง</button><label class="note" style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="libAuto" checked> บันทึกลงคลังอัตโนมัติ</label></div>
+    <div class="bar" style="margin-top:0"><label class="note" style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="libAuto" checked> บันทึกลงคลังอัตโนมัติ</label></div>
     <div class="note" id="libSt"></div><div class="note" id="libKind" hidden></div>
   </div>
   <div class="sec"><b>ดาวน์โหลด / ส่ง</b>
@@ -1105,15 +1106,16 @@ async function resetLogo(){
   brandsUI();render();logoResetUI();
   logoMsg(had?(BUILTIN_LOGOS[b]||b==="TPC"?"ใช้โลโก้เดิมของระบบสำหรับ "+b+" แล้ว":"ลบโลโก้ของ "+b+" แล้ว (จะแสดงเป็นชื่อแบรนด์)"):"แบรนด์นี้ยังไม่มีโลโก้ที่อัปโหลดเอง")}
 function logoResetUI(){const b=$("logoFor")&&$("logoFor").value,btn=$("logoReset");if(btn)btn.disabled=!b||!(SHARED[b]||(S.logos&&S.logos[b]))}
-function libDelUI(){const b=$("delCur");if(!b)return;b.disabled=!S.recId;if(!S.recId){b.classList.remove("sure");b.textContent="🗑 ลบรายการนี้ออกจากคลัง"}}
+function libDelUI(){const b=$("delCur");if(!b)return;b.disabled=!S.recId;if(!S.recId){b.classList.remove("sure");b.textContent="🗑 ลบ"}}
 async function deleteCurrent(){
   const b=$("delCur"),st=$("libSt");if(!S.recId)return;
   if(!b.dataset.sure){b.dataset.sure="1";b.classList.add("sure");b.textContent="ยืนยันลบ “"+(S.nameTh||S.code||"รายการนี้")+"”?";
-    b._tm=setTimeout(()=>{delete b.dataset.sure;b.classList.remove("sure");libDelUI()},4000);return}
+    b._tm=setTimeout(()=>{delete b.dataset.sure;b.classList.remove("sure");b.textContent="🗑 ลบ";libDelUI()},4000);return}
   clearTimeout(b._tm);delete b.dataset.sure;b.disabled=true;st.textContent="กำลังลบ…";
-  try{await Lib.remove(S.recId);delete S.recId;save();st.textContent="ลบรายการนี้ออกจากคลังแล้ว (ข้อมูลในฟอร์มยังอยู่ กด “＋ สินค้าใหม่” เพื่อเริ่มใหม่)"}
-  catch(e){st.textContent="ลบไม่สำเร็จ: "+((e&&e.message)||"ไม่มีสิทธิ์แก้ไขลิงก์นี้");}
-  libDelUI()}
+  try{await Lib.remove(S.recId);delete S.recId;save();st.textContent="ลบรายการนี้ออกจากคลังแล้ว (ข้อมูลในฟอร์มยังอยู่ กด “＋ สินค้าใหม่” เพื่อเริ่มใหม่)";toast("🗑 ลบออกจากคลังแล้ว (ข้อมูลในฟอร์มยังอยู่)")}
+  catch(e){st.textContent="ลบไม่สำเร็จ: "+((e&&e.message)||"ไม่มีสิทธิ์แก้ไขลิงก์นี้");toast(st.textContent,true)}
+  b.textContent="🗑 ลบ";libDelUI()}
+function toast(t,bad){let e=$("toast");if(!e){e=document.createElement("div");e.id="toast";e.setAttribute("role","status");e.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:80;padding:10px 18px;border-radius:999px;color:#fff;font-size:14px;box-shadow:0 8px 20px rgba(0,0,0,.25);max-width:90vw";document.body.appendChild(e)}e.style.bottom=innerWidth<=900?"90px":"24px";e.style.background=bad?"#c0392b":"#13203c";e.textContent=t;e.hidden=false;clearTimeout(e._t);e._t=setTimeout(()=>e.hidden=true,3500)}
 function packS(){
   const photos={},cp=JSON.parse(JSON.stringify(S)),defects=[];
   S.photos.forEach((p,i)=>photos["p"+i]=p);cp.photos=[];
@@ -1511,6 +1513,7 @@ function openGuide(){
   <details class="gd"><summary>7. คลังข้อมูล (แบรนด์ → หัวข้อ → สินค้า → ตำหนิ)</summary>
    <ol><li>ติ๊กแบรนด์อย่างน้อย 1 แบรนด์ ใส่รหัสหรือชื่อสินค้า แล้วกด “💾 บันทึกเข้าคลัง”</li>
    <li>กด “📚 รายการที่บันทึกไว้” เพื่อค้นหา “เปิด” กลับมาแก้ไข ดูตำหนิพร้อมรูปด้วย “ตำหนิ ▾” หรือ “ลบ” (กดสองครั้งเพื่อยืนยัน)</li>
+   <li><b>ลบรายการที่เปิดอยู่:</b> กดปุ่มแดง “🗑 ลบ” ที่แถบด้านบนของฟอร์ม แล้วกดซ้ำเพื่อยืนยัน (ใช้ได้เมื่อเปิดรายการจากคลังอยู่)</li>
    <li><b>ลบรายงานที่ไม่ต้องการ:</b> ในคลังกด “🗑 ลบ” ที่รายการ (กดซ้ำเพื่อยืนยัน) หรือติ๊กหลายรายการแล้วกด “🗑 ลบที่เลือก” ถ้าเปิดรายการนั้นอยู่ในฟอร์ม กด “🗑 ลบรายการนี้ออกจากคลัง” ที่กล่องคลังข้อมูลได้เลย ลบแล้วกู้คืนไม่ได้</li>
    <li><b>มีสินค้าคล้ายกัน:</b> กด “⧉ ทำสำเนา” ในฟอร์ม หรือ “⧉ คัดลอก” ที่รายการในคลัง ระบบจะคัดลอกข้อมูลและรูปเป็นรายการใหม่ ให้แก้เฉพาะส่วนที่ต่างแล้วบันทึกเข้าคลัง (รายการเดิมไม่เปลี่ยน)</li>
    <li>เปิดสินค้าจากคลังแล้วบันทึกซ้ำ = อัปเดตรายการเดิม ถ้าจะเก็บเป็นสินค้าใหม่ให้กด “＋ สินค้าใหม่” ก่อน</li></ol>
