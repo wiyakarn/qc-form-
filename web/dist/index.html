@@ -97,6 +97,7 @@ button.hm-k{font:inherit;text-align:left;cursor:pointer;width:100%;transition:tr
 .sec>b{cursor:pointer;display:flex!important;justify-content:space-between;align-items:center;font-size:13px!important;padding:2px 0;margin-bottom:6px;user-select:none}
 .sec>b::after{content:"▾";font-size:12px;color:var(--tx2)}
 .sec.shut>b{margin-bottom:0}.sec.shut>b::after{content:"▸"}.sec.shut>*:not(b){display:none!important}
+.dz{border-color:#e8c2bd;background:#fff8f7}.dz>b{color:var(--red)!important}.dz .btn.del{width:100%;padding:10px}
 .sec.flash{outline:2px solid var(--grn);outline-offset:1px}
 .btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.sec>b:focus-visible{outline:2px solid #1a73e8;outline-offset:1px}
 
@@ -407,7 +408,7 @@ window.claude={use:async n=>{const ok=await ready;if(!ok)return null;return n===
     <button class="btn p" onclick="saveToLib()" title="บันทึกเข้าคลัง">💾 บันทึก</button>
     <button class="btn" onclick="openLib()" title="เปิดรายการที่บันทึกไว้">📚 คลัง</button>
     <button class="btn p" onclick="openReview()" title="รีวิวและส่งไฟล์ (PDF / Word / PowerPoint / รูป)">⬇ ส่งออก</button>
-    <button class="btn del" id="delCur" onclick="deleteCurrent()" disabled title="ลบรายการที่เปิดอยู่ออกจากคลัง (เปิดรายการจากคลังก่อน)">🗑 ลบ</button>
+    <button class="btn" id="clrBtn" onclick="clearForm()" title="เคลียร์ข้อมูลที่กรอกในรายงานนี้ (เลิกทำได้ทันที)">🧹 เคลียร์</button>
     <button class="btn mob" onclick="toggleView()" id="viewBtn">👁 ตัวอย่าง</button>
     <button class="btn gb" onclick="openGuide()" title="คู่มือการใช้งาน">📖 คู่มือ</button>
     <button class="btn" id="adminBtn" onclick="openAdmin()" hidden>👥 ผู้ใช้</button>
@@ -479,6 +480,10 @@ window.claude={use:async n=>{const ok=await ready;if(!ok)return null;return n===
       <button class="btn p" onclick="window.print()">🖨 พิมพ์ / PDF</button>
     </div>
     <input type="file" id="imp" accept=".json" hidden>
+  </div>
+  <div class="sec dz" id="dangerZone"><b>โซนลบข้อมูล</b>
+    <button class="btn del" id="delCur" onclick="deleteCurrent()" disabled title="ลบรายการที่เปิดอยู่ออกจากคลัง (เปิดรายการจากคลังก่อน)">🗑 ลบรายการนี้ออกจากคลัง</button>
+    <div class="note">ลบแล้วกู้คืนไม่ได้ และหายจากคลังของทุกคน ปุ่มนี้ใช้ได้เมื่อเปิดรายการจากคลัง ถ้าแค่อยากล้างข้อมูลที่กรอก ใช้ “🧹 เคลียร์” ที่แถบด้านบน</div>
   </div>
 </div>
 <div class="stage"><div class="sheet" id="sheet"></div></div>
@@ -1106,16 +1111,26 @@ async function resetLogo(){
   brandsUI();render();logoResetUI();
   logoMsg(had?(BUILTIN_LOGOS[b]||b==="TPC"?"ใช้โลโก้เดิมของระบบสำหรับ "+b+" แล้ว":"ลบโลโก้ของ "+b+" แล้ว (จะแสดงเป็นชื่อแบรนด์)"):"แบรนด์นี้ยังไม่มีโลโก้ที่อัปโหลดเอง")}
 function logoResetUI(){const b=$("logoFor")&&$("logoFor").value,btn=$("logoReset");if(btn)btn.disabled=!b||!(SHARED[b]||(S.logos&&S.logos[b]))}
-function libDelUI(){const b=$("delCur");if(!b)return;b.disabled=!S.recId;if(!S.recId){b.classList.remove("sure");b.textContent="🗑 ลบ"}}
+function libDelUI(){const b=$("delCur");if(!b)return;b.disabled=!S.recId;if(!S.recId){b.classList.remove("sure");b.textContent="🗑 ลบรายการนี้ออกจากคลัง"}}
 async function deleteCurrent(){
   const b=$("delCur"),st=$("libSt");if(!S.recId)return;
   if(!b.dataset.sure){b.dataset.sure="1";b.classList.add("sure");b.textContent="ยืนยันลบ “"+(S.nameTh||S.code||"รายการนี้")+"”?";
-    b._tm=setTimeout(()=>{delete b.dataset.sure;b.classList.remove("sure");b.textContent="🗑 ลบ";libDelUI()},4000);return}
+    b._tm=setTimeout(()=>{delete b.dataset.sure;b.classList.remove("sure");b.textContent="🗑 ลบรายการนี้ออกจากคลัง";libDelUI()},4000);return}
   clearTimeout(b._tm);delete b.dataset.sure;b.disabled=true;st.textContent="กำลังลบ…";
   try{await Lib.remove(S.recId);delete S.recId;save();st.textContent="ลบรายการนี้ออกจากคลังแล้ว (ข้อมูลในฟอร์มยังอยู่ กด “＋ สินค้าใหม่” เพื่อเริ่มใหม่)";toast("🗑 ลบออกจากคลังแล้ว (ข้อมูลในฟอร์มยังอยู่)")}
   catch(e){st.textContent="ลบไม่สำเร็จ: "+((e&&e.message)||"ไม่มีสิทธิ์แก้ไขลิงก์นี้");toast(st.textContent,true)}
-  b.textContent="🗑 ลบ";libDelUI()}
-function toast(t,bad){let e=$("toast");if(!e){e=document.createElement("div");e.id="toast";e.setAttribute("role","status");e.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:80;padding:10px 18px;border-radius:999px;color:#fff;font-size:14px;box-shadow:0 8px 20px rgba(0,0,0,.25);max-width:90vw";document.body.appendChild(e)}e.style.bottom=innerWidth<=900?"90px":"24px";e.style.background=bad?"#c0392b":"#13203c";e.textContent=t;e.hidden=false;clearTimeout(e._t);e._t=setTimeout(()=>e.hidden=true,3500)}
+  b.textContent="🗑 ลบรายการนี้ออกจากคลัง";libDelUI()}
+function clearForm(){
+  const b=$("clrBtn");
+  if(!b.dataset.sure){b.dataset.sure="1";b.classList.add("sure");b.textContent="ยืนยันเคลียร์?";b._tm=setTimeout(()=>{delete b.dataset.sure;b.classList.remove("sure");b.textContent="🧹 เคลียร์"},4000);return}
+  clearTimeout(b._tm);delete b.dataset.sure;b.classList.remove("sure");b.textContent="🧹 เคลียร์";
+  const snap=JSON.stringify(S),keep={brands:S.brands,customBrands:S.customBrands,logos:S.logos,lang:S.lang,theme:S.theme};
+  S=Object.assign(blank(),keep);if(window.__cloud)window.__cloud.lastLibH="";
+  fieldsUI();listsUI();brandsUI();phUI();render();save();libDelUI();
+  $("libSt").textContent="เคลียร์ฟอร์มแล้ว (รายการในคลังไม่ถูกแก้ไข)";
+  if(window.__cloud)window.__cloud.track("clear",{});
+  toast("🧹 เคลียร์ฟอร์มแล้ว",false,"เลิกทำ",()=>{S=JSON.parse(snap);fieldsUI();listsUI();brandsUI();phUI();render();save();libDelUI();$("libSt").textContent="เลิกทำแล้ว คืนข้อมูลเดิม"})}
+function toast(t,bad,act,fn){let e=$("toast");if(!e){e=document.createElement("div");e.id="toast";e.setAttribute("role","status");e.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:80;padding:10px 18px;border-radius:999px;color:#fff;font-size:14px;box-shadow:0 8px 20px rgba(0,0,0,.25);max-width:90vw";document.body.appendChild(e)}e.style.bottom=innerWidth<=900?"90px":"24px";e.style.background=bad?"#c0392b":"#13203c";e.textContent=t;if(act){const a=document.createElement("button");a.textContent=act;a.style.cssText="margin-left:12px;background:#fff;color:#13203c;border:0;border-radius:999px;padding:3px 12px;font:inherit;font-weight:700;cursor:pointer";a.onclick=()=>{e.hidden=true;fn()};e.appendChild(a)}e.hidden=false;clearTimeout(e._t);e._t=setTimeout(()=>e.hidden=true,act?8000:3500)}
 function packS(){
   const photos={},cp=JSON.parse(JSON.stringify(S)),defects=[];
   S.photos.forEach((p,i)=>photos["p"+i]=p);cp.photos=[];
@@ -1279,7 +1294,7 @@ const Cloud=window.__cloud={uid:null,user:null,me:null,owner:false,db:null,on:fa
   const lr=Lib.remove.bind(Lib);Lib.remove=async function(id){let m={};try{if(Lib.db){const d=await Lib.db.doc("ingredients/"+id).get();if(d.exists)m={code:d.data().code,name:d.data().nameTh}}}catch(e){}await lr(id);Cloud.track("delete",m)};
 })();
 /* ===== แดชบอร์ดผู้ดูแล (เจ้าของลิงก์เท่านั้น) ===== */
-const ACT={open:"เข้าใช้งาน",new:"สินค้าใหม่",save:"บันทึกเข้าคลัง",autosave:"บันทึกอัตโนมัติ","open-item":"เปิดรายการ",delete:"ลบรายการ","import-spec":"แนบสเปค",translate:"แปลภาษา",export:"ดาวน์โหลด",logo:"เปลี่ยนโลโก้",guide:"เปิดคู่มือ",conflict:"ชนกันของการแก้ไข","restore-draft":"โหลดฉบับร่าง",copy:"ทำสำเนา"};
+const ACT={open:"เข้าใช้งาน",new:"สินค้าใหม่",save:"บันทึกเข้าคลัง",autosave:"บันทึกอัตโนมัติ","open-item":"เปิดรายการ",delete:"ลบรายการ","import-spec":"แนบสเปค",translate:"แปลภาษา",export:"ดาวน์โหลด",logo:"เปลี่ยนโลโก้",guide:"เปิดคู่มือ",conflict:"ชนกันของการแก้ไข","restore-draft":"โหลดฉบับร่าง",copy:"ทำสำเนา",clear:"เคลียร์ฟอร์ม"};
 async function openAdmin(){
   if(!Cloud.on||!Cloud.owner)return;closeOv("ov6");
   const o=document.createElement("div");o.id="ov6";o.className="ov";
@@ -1513,7 +1528,8 @@ function openGuide(){
   <details class="gd"><summary>7. คลังข้อมูล (แบรนด์ → หัวข้อ → สินค้า → ตำหนิ)</summary>
    <ol><li>ติ๊กแบรนด์อย่างน้อย 1 แบรนด์ ใส่รหัสหรือชื่อสินค้า แล้วกด “💾 บันทึกเข้าคลัง”</li>
    <li>กด “📚 รายการที่บันทึกไว้” เพื่อค้นหา “เปิด” กลับมาแก้ไข ดูตำหนิพร้อมรูปด้วย “ตำหนิ ▾” หรือ “ลบ” (กดสองครั้งเพื่อยืนยัน)</li>
-   <li><b>ลบรายการที่เปิดอยู่:</b> กดปุ่มแดง “🗑 ลบ” ที่แถบด้านบนของฟอร์ม แล้วกดซ้ำเพื่อยืนยัน (ใช้ได้เมื่อเปิดรายการจากคลังอยู่)</li>
+   <li><b>เคลียร์ข้อมูลที่กรอก:</b> กด “🧹 เคลียร์” ที่แถบด้านบน แล้วกดซ้ำเพื่อยืนยัน ระบบล้างรหัส ชื่อ รูป และรายการทั้งหมด แต่คงแบรนด์ไว้ กด “เลิกทำ” ที่แถบแจ้งด้านล่างได้ภายใน 8 วินาที รายการในคลังไม่ถูกแก้ไข</li>
+   <li><b>ลบรายการที่เปิดอยู่:</b> ปุ่มแดง “🗑 ลบรายการนี้ออกจากคลัง” อยู่ล่างสุดของแถบซ้าย (หัวข้อ “โซนลบข้อมูล”) กดซ้ำเพื่อยืนยัน ใช้ได้เมื่อเปิดรายการจากคลังอยู่</li>
    <li><b>ลบรายงานที่ไม่ต้องการ:</b> ในคลังกด “🗑 ลบ” ที่รายการ (กดซ้ำเพื่อยืนยัน) หรือติ๊กหลายรายการแล้วกด “🗑 ลบที่เลือก” ถ้าเปิดรายการนั้นอยู่ในฟอร์ม กด “🗑 ลบรายการนี้ออกจากคลัง” ที่กล่องคลังข้อมูลได้เลย ลบแล้วกู้คืนไม่ได้</li>
    <li><b>มีสินค้าคล้ายกัน:</b> กด “⧉ ทำสำเนา” ในฟอร์ม หรือ “⧉ คัดลอก” ที่รายการในคลัง ระบบจะคัดลอกข้อมูลและรูปเป็นรายการใหม่ ให้แก้เฉพาะส่วนที่ต่างแล้วบันทึกเข้าคลัง (รายการเดิมไม่เปลี่ยน)</li>
    <li>เปิดสินค้าจากคลังแล้วบันทึกซ้ำ = อัปเดตรายการเดิม ถ้าจะเก็บเป็นสินค้าใหม่ให้กด “＋ สินค้าใหม่” ก่อน</li></ol>
