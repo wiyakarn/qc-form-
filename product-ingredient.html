@@ -93,6 +93,12 @@ button.hm-k{font:inherit;text-align:left;cursor:pointer;width:100%;transition:tr
 .hm-side .btn{width:100%;text-align:left;padding:11px 14px;border-radius:999px;font-size:13.5px}.hm-side .btn.p{text-align:center;font-weight:700}
 .hm-side .hm-note{margin:6px 4px 0;font-size:11.5px;line-height:1.5}
 @media(max-width:900px){.hm-wrap{grid-template-columns:minmax(0,1fr);padding:0 16px}.hm-side{position:static;order:2;margin:0 0 30px;flex-direction:row;flex-wrap:wrap}.hm-side .btn{width:auto;text-align:center}.hm-side .btn.p{order:-1;flex:1 1 100%}.hm-side .hm-note{flex-basis:100%}.hm-wrap .hm{order:1}}
+.hm-me{display:flex;align-items:center;gap:10px;padding:2px 2px 10px;border-bottom:1px solid #eceff5;margin-bottom:2px}
+.hm-me .av{flex:0 0 auto;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:#fff;background:linear-gradient(145deg,#2f4a85,#13203c);box-shadow:0 3px 8px rgba(19,32,60,.3)}
+.hm-me div{min-width:0}.hm-me b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hm-me small{font-size:12px;color:var(--tx2)}
+.hm-side .hm-pill{margin:0 0 6px;text-align:center;white-space:normal;font-size:11.5px}
+.hm-side{margin-top:44px}
+@media(max-width:900px){.hm-side .hm-me{flex:1 1 100%}.hm-side .hm-pill{flex:1 1 100%}}
 @media print{#home{display:none!important}}
 .panel h1{font-size:16px;margin-bottom:10px}
 .panel h1{margin-bottom:8px}
@@ -188,7 +194,8 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
 <section id="home" aria-label="หน้าแรก" hidden>
   <div class="hm-wrap">
   <aside class="hm-ft hm-side" aria-label="เมนู">
-    <button class="btn p" data-go="form" id="hmForm">เข้าสู่ฟอร์ม →</button>
+    <div class="hm-me"><span class="av" id="hmAv">?</span><div><b id="hmMe">ผู้ใช้</b><small id="hmRole"></small></div></div>
+    <div class="hm-pill" id="hmPill">☁ กำลังเชื่อมต่อ…</div>
     <button class="btn" data-go="guide">📖 คู่มือการใช้งาน</button>
     <button class="btn" data-go="admin" id="hmAdmin" hidden>👥 ดูการใช้งานของผู้ใช้</button>
     <div class="note hm-note">ระบบบันทึกเวลาเข้าใช้และการทำงาน เพื่อให้ผู้ดูแลตรวจสอบ</div>
@@ -199,7 +206,6 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
       <div class="hm-t">📋 Product Ingredient</div>
       <h2 id="hmHello">สวัสดี</h2>
       <p id="hmSub">เอกสารข้อมูลสินค้าสำหรับหน้าร้าน ทำเสร็จได้ในไม่กี่ขั้นตอน</p>
-      <div class="hm-pill" id="hmPill">☁ กำลังเชื่อมต่อ…</div>
     </header>
     <div class="hm-grid" id="hmCards">
       <button class="hm-card" data-go="new"><span class="ic">＋</span><div><b>สร้างสินค้าใหม่</b></div></button>
@@ -1169,6 +1175,7 @@ const ago=t=>{if(!t)return"";const m=Math.round((Date.now()-t)/6e4);return m<1?"
 async function renderHome(){
   const h=new Date().getHours(),g=h<11?"สวัสดีตอนเช้า":h<17?"สวัสดีตอนบ่าย":"สวัสดีตอนเย็น",C=window.__cloud||{};
   $("hmHello").textContent=g+((C.me&&C.me.name)?" คุณ"+C.me.name:"");
+  {const nm=(C.me&&C.me.name)||"ผู้ใช้",e=$("hmMe");if(e){e.textContent=nm;$("hmAv").textContent=(nm.trim()[0]||"?").toUpperCase();$("hmRole").textContent=C.on?(C.owner?"ผู้ดูแลระบบ":"ผู้ใช้งาน"):"ใช้งานในเครื่องนี้"}}
   $("hmPill").textContent=C.on?"☁ เชื่อมต่อแล้ว · บันทึกอัตโนมัติเปิดอยู่":"💾 บันทึกในเครื่องนี้";
   $("hmAdmin").hidden=!(C.on&&C.owner);
   const cur=((HAD_STATE||USER_EDITED)&&(S.code||S.nameTh))?`<div class="hm-h"><b>งานที่ทำอยู่</b></div><div class="hm-it"><div class="nm"><b>${esc(S.code||"")} ${esc(S.nameTh||"")}</b><span>${esc((S.brands||[]).join(", "))}${S.recId?" · อยู่ในคลัง":" · ยังไม่ได้บันทึกเข้าคลัง"}</span></div><button class="btn p" data-go="form">ทำต่อ</button></div>`:"";
