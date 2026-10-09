@@ -88,7 +88,7 @@ function openUsers(){
       else if(t.dataset.dl){if(!t.dataset.sure){t.dataset.sure="1";t.textContent="ยืนยันลบ?";setTimeout(()=>{if(t.isConnected){delete t.dataset.sure;t.textContent="ลบ"}},4000);return}await fn("admin-users",{action:"delete",id:t.dataset.dl});load()}}
     catch(e){msg(ADM_ERR[e.code]||e.message,true)}});
   load()}
-document.addEventListener("DOMContentLoaded",()=>{ready.then(ok=>{if(!ok)return;const ft=document.querySelector(".hm-ft");if(!ft)return;const go=ft.querySelector("[data-go=form]");
+document.addEventListener("DOMContentLoaded",()=>{ready.then(ok=>{if(!ok)return;const ft=document.querySelector(".hm-ft");if(!ft)return;const go=ft.querySelector(".hm-note")||null;
   const mk=(t,fnc)=>{const b=document.createElement("button");b.className="btn";b.textContent=t;b.onclick=fnc;ft.insertBefore(b,go);return b};
   if(PROF&&PROF.role==="admin")mk("👤 จัดการผู้ใช้",openUsers);
   mk("🔑 รหัสผ่าน",openPassword);
