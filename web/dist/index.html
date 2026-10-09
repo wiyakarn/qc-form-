@@ -193,27 +193,43 @@ const ready=(async()=>{
 })();
 ready.then(ok=>{if(!ok)showLogin()});
 
-/* ---------- login gate (email + password; accounts are created by the admin) ---------- */
+/* ---------- login gate (email + password; users sign up themselves) ---------- */
 const TH_ERR=m=>/invalid login/i.test(m)?"อีเมลหรือรหัสผ่านไม่ถูกต้อง":/rate limit|too many/i.test(m)?"ลองบ่อยเกินไป รอสักครู่แล้วลองใหม่":/banned|disabled/i.test(m)?"บัญชีนี้ถูกปิดการใช้งาน ติดต่อผู้ดูแล":m;
 function showLogin(){
   const run=()=>{
     const o=document.createElement("div");o.id="loginGate";
-    o.style.cssText="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(900px 380px at 85% -60px,rgba(61,92,160,.25),transparent 70%),linear-gradient(180deg,#e9edf6,#f3f4f8);font-family:Sarabun,'Noto Sans Thai',Tahoma,sans-serif";
+    o.style.cssText="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;background:radial-gradient(900px 380px at 85% -60px,rgba(61,92,160,.25),transparent 70%),linear-gradient(180deg,#e9edf6,#f3f4f8);font-family:Sarabun,'Noto Sans Thai',Tahoma,sans-serif";
     const inp="width:100%;padding:13px 16px;font:inherit;font-size:16px;border:1px solid #d9dce5;border-radius:999px;margin-bottom:12px";
-    o.innerHTML=`<form id="lgForm" style="background:#fff;border-radius:28px;box-shadow:0 2px 4px rgba(19,32,60,.06),0 18px 40px rgba(19,32,60,.16);padding:32px 28px;max-width:400px;width:100%;color:#1a1916">
+    const tab="flex:1;padding:10px;font:inherit;font-size:14px;font-weight:700;border:0;border-radius:999px;cursor:pointer;background:transparent;color:#6b6860";
+    o.innerHTML=`<form id="lgForm" style="background:#fff;border-radius:28px;box-shadow:0 2px 4px rgba(19,32,60,.06),0 18px 40px rgba(19,32,60,.16);padding:28px;max-width:400px;width:100%;color:#1a1916">
       <div style="font-size:13px;font-weight:700;color:#13203c">📋 Product Ingredient</div>
-      <h2 style="font-size:26px;margin:6px 0 4px;color:#13203c">เข้าสู่ระบบ</h2>
-      <p style="font-size:14px;color:#6b6860;margin-bottom:18px">ใช้อีเมลและรหัสผ่านที่ผู้ดูแลสร้างให้</p>
+      <div style="display:flex;gap:4px;background:#eef1f7;border-radius:999px;padding:4px;margin:14px 0 18px" role="tablist">
+        <button type="button" id="tbIn" role="tab" style="${tab}">เข้าสู่ระบบ</button><button type="button" id="tbUp" role="tab" style="${tab}">สมัครใช้งาน</button></div>
+      <h2 id="lgTitle" style="font-size:24px;margin:0 0 4px;color:#13203c"></h2>
+      <p id="lgSub" style="font-size:14px;color:#6b6860;margin-bottom:16px"></p>
+      <input id="lgName" type="text" autocomplete="name" placeholder="ชื่อที่แสดง (เช่น ชื่อ-นามสกุล)" style="${inp}">
       <input id="lgEmail" type="email" required autocomplete="username" placeholder="อีเมล" style="${inp}">
       <input id="lgPw" type="password" required autocomplete="current-password" placeholder="รหัสผ่าน" style="${inp}">
-      <button id="lgBtn" type="submit" style="width:100%;padding:13px;font:inherit;font-size:15px;font-weight:700;color:#fff;background:linear-gradient(180deg,#2a4278,#13203c);border:0;border-radius:999px;box-shadow:0 6px 16px rgba(19,32,60,.3);cursor:pointer">เข้าสู่ระบบ</button>
-      <p id="lgMsg" role="status" style="font-size:13px;margin-top:14px;min-height:20px;color:#c0392b"></p>
-      <p style="font-size:12px;color:#8a8780;margin-top:6px">ยังไม่มีบัญชี? ติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์เข้าใช้งาน</p></form>`;
+      <input id="lgPw2" type="password" autocomplete="new-password" placeholder="พิมพ์รหัสผ่านอีกครั้ง" style="${inp}">
+      <button id="lgBtn" type="submit" style="width:100%;padding:13px;font:inherit;font-size:15px;font-weight:700;color:#fff;background:linear-gradient(180deg,#2a4278,#13203c);border:0;border-radius:999px;box-shadow:0 6px 16px rgba(19,32,60,.3);cursor:pointer"></button>
+      <p id="lgMsg" role="status" style="font-size:13px;margin-top:14px;min-height:20px;color:#c0392b"></p></form>`;
     document.body.appendChild(o);
-    const f=o.querySelector("#lgForm"),m=o.querySelector("#lgMsg"),b=o.querySelector("#lgBtn");
-    f.onsubmit=async ev=>{ev.preventDefault();b.disabled=true;m.textContent="";b.textContent="กำลังเข้าสู่ระบบ…";
-      const{error}=await sb.auth.signInWithPassword({email:o.querySelector("#lgEmail").value.trim(),password:o.querySelector("#lgPw").value});
-      if(error){m.textContent=TH_ERR(error.message);b.disabled=false;b.textContent="เข้าสู่ระบบ";return}
+    const $$=s=>o.querySelector(s),m=$$("#lgMsg"),b=$$("#lgBtn");let mode="in";
+    const setMode=md=>{mode=md;const up=md==="up";
+      $$("#tbIn").style.background=up?"transparent":"#fff";$$("#tbIn").style.color=up?"#6b6860":"#13203c";$$("#tbIn").style.boxShadow=up?"none":"0 2px 6px rgba(19,32,60,.12)";
+      $$("#tbUp").style.background=up?"#fff":"transparent";$$("#tbUp").style.color=up?"#13203c":"#6b6860";$$("#tbUp").style.boxShadow=up?"0 2px 6px rgba(19,32,60,.12)":"none";
+      $$("#lgTitle").textContent=up?"สมัครใช้งาน":"เข้าสู่ระบบ";$$("#lgSub").textContent=up?"ใช้อีเมลของคุณ และตั้งรหัสผ่านอย่างน้อย 8 ตัวอักษร":"ใช้อีเมลและรหัสผ่านที่สมัครไว้";
+      $$("#lgName").style.display=up?"":"none";$$("#lgPw2").style.display=up?"":"none";$$("#lgPw2").required=up;
+      $$("#lgPw").autocomplete=up?"new-password":"current-password";b.textContent=up?"สมัครและเข้าใช้งาน":"เข้าสู่ระบบ";m.textContent=""};
+    $$("#tbIn").onclick=()=>setMode("in");$$("#tbUp").onclick=()=>setMode("up");setMode("in");
+    o.querySelector("#lgForm").onsubmit=async ev=>{ev.preventDefault();m.style.color="#c0392b";m.textContent="";
+      const email=$$("#lgEmail").value.trim(),pw=$$("#lgPw").value;
+      if(mode==="up"){if(pw.length<8){m.textContent="รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร";return}if(pw!==$$("#lgPw2").value){m.textContent="รหัสผ่านสองช่องไม่ตรงกัน";return}}
+      b.disabled=true;const old=b.textContent;b.textContent="กำลังดำเนินการ…";
+      let r;if(mode==="up")r=await sb.auth.signUp({email,password:pw,options:{data:{name:$$("#lgName").value.trim()}}});
+      else r=await sb.auth.signInWithPassword({email,password:pw});
+      if(r.error){m.textContent=/already registered|already exists/i.test(r.error.message)?"อีเมลนี้สมัครไว้แล้ว กด “เข้าสู่ระบบ”":TH_ERR(r.error.message);b.disabled=false;b.textContent=old;return}
+      if(mode==="up"&&!(r.data&&r.data.session)){m.style.color="#1d6f42";m.textContent="สมัครแล้ว กรุณายืนยันอีเมลจากกล่องจดหมาย แล้วกลับมาเข้าสู่ระบบ";b.disabled=false;b.textContent=old;setMode("in");return}
       location.reload()};
   };
   document.body?run():document.addEventListener("DOMContentLoaded",run);
