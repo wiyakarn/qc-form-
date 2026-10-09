@@ -108,8 +108,8 @@ table.st{width:100%;border-collapse:collapse;font-size:13px}
     <div class="bar"><button class="btn" onclick="resetTheme()">↻ ดึงสีจากโลโก้ใหม่</button></div>
   </div>
   <div class="sec"><b>แนบสเปค</b>
-    <div class="bar" style="margin-top:0"><button class="btn p" onclick="$('specFile').click()">📎 แนบสเปค (Word / PDF / txt)</button><button class="btn" onclick="openPaste()">วางข้อความ</button></div>
-    <input type="file" id="specFile" hidden>
+    <div class="bar" style="margin-top:0"><button class="btn p" onclick="$('specFile').click()">📎 แนบสเปค (ทุกชนิดไฟล์)</button><button class="btn" onclick="$('specCam').click()">📷 ถ่ายรูปสเปค</button><button class="btn" onclick="openPaste()">วางข้อความ</button></div>
+    <input type="file" id="specFile" multiple hidden><input type="file" id="specCam" accept="image/*" capture="environment" hidden>
     <div class="note">ระบบดึงข้อมูลที่ใช้ให้ แล้วให้ติ๊กเลือก/แก้ไข/เพิ่มเองได้ก่อนนำเข้าฟอร์ม</div>
   </div>
   <div class="sec"><b>ภาษา / แปลอัตโนมัติ</b>
@@ -326,17 +326,6 @@ async function readDocx(file){
   DUPSRC=new Set();Object.keys(imgAt).forEach(k=>{imgAt[k]=imgAt[k].filter(im=>cnt[im.key]<3);imgAt[k].forEach(im=>{if(cnt[im.key]>1)DUPSRC.add(im.src)});if(!imgAt[k].length)delete imgAt[k]});
   return{lines,imgAt,imgs:[]};
 }
-async function readPdf(file){
-  try{await lib("pdfjs")}catch(e){throw new Error("โหลดตัวอ่าน PDF ไม่สำเร็จ (ต้องต่ออินเทอร์เน็ต) ลองกด “วางข้อความ” แทน")}
-  const pj=window.pdfjsLib;pj.GlobalWorkerOptions.workerSrc=LIBS.pdfw;
-  let pdf;try{pdf=await pj.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise}catch(e){throw new Error("เปิดไฟล์ PDF ไม่ได้ (อาจมีรหัสผ่านหรือไฟล์เสีย)")}
-  const lines=[];
-  for(let n=1;n<=pdf.numPages;n++){const tc=await(await pdf.getPage(n)).getTextContent(),rows=[];
-    tc.items.forEach(it=>{if(!it.str)return;const y=Math.round(it.transform[5]),x=it.transform[4];let r=rows.find(r=>Math.abs(r.y-y)<=3);if(!r){r={y,its:[]};rows.push(r)}r.its.push({x,w:it.width,s:it.str})});
-    rows.sort((a,b)=>b.y-a.y).forEach(r=>{r.its.sort((a,b)=>a.x-b.x);let s="",end=null;r.its.forEach(i=>{if(end!==null){if(i.x-end>18)s+="\t";else if(i.x-end>1.5&&!/\s$/.test(s)&&!/^\s/.test(i.s))s+=" "}s+=i.s;end=i.x+i.w});lines.push(s)})}
-  if(!lines.some(l=>l.trim()))throw new Error("PDF นี้เป็นภาพสแกน ไม่มีข้อความให้ดึง ลองใช้ไฟล์ Word หรือกรอกเอง");
-  return{lines,imgs:[]};
-}
 let DUPSRC=new Set();
 function toReview(prods,imgs,name){
   const ex=[...(imgs||[]).map(m=>m.src||m),...(prods.extras||[]),...prods.flatMap(p=>p.extra||[])].filter((s,i,a)=>s&&a.indexOf(s)===i);
@@ -354,16 +343,149 @@ async function ingest(lines,imgs,name,imgAt){
       return toReview([j],imgs,name)}catch(e){}}
   R={step:"err",text:lines.join("\n"),n:lines.filter(l=>l.trim()).length};showReview();
 }
-$("specFile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
-  R={step:"busy"};showReview();
-  try{const n=f.name.toLowerCase();let d;
-    if(/\.docx$/.test(n))d=await readDocx(f);
-    else if(/\.pdf$/.test(n)||f.type==="application/pdf")d=await readPdf(f);
-    else if(/\.doc$/.test(n))throw new Error("ไฟล์ .doc รุ่นเก่าอ่านไม่ได้ ให้เปิดใน Word แล้วบันทึกเป็น .docx");
-    else if(/\.(xlsx?|pptx?|zip)$/.test(n)||/^image\//.test(f.type))throw new Error("ชนิดไฟล์นี้ยังอ่านไม่ได้ ใช้ Word (.docx) PDF หรือ .txt");
-    else d={lines:(await f.text()).split(/\r?\n/),imgs:[]};
-    await ingest(d.lines,d.imgs,f.name,d.imgAt)}
-  catch(x){R={step:"err",msg:x.message||String(x)};showReview()}};
+/* ===== อ่านสเปคได้ทุกรูปแบบ: Word/PDF/ภาพ/สแกน/Excel/PowerPoint/RTF/HTML/OpenDocument/.doc เก่า ===== */
+const sayR=m=>{if(R&&R.step==="busy"){R.msg=m;showReview()}};
+function toBlob(canvas,type,q){return new Promise(r=>canvas.toBlob(r,type,q))}
+async function toJpeg(file,max=1800){
+  const url=URL.createObjectURL(file);
+  try{const im=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>no(new Error("x"));i.src=url});
+    const W0=im.naturalWidth||im.width||1200,H0=im.naturalHeight||im.height||1200,s=Math.min(1,max/Math.max(W0,H0)),c=document.createElement("canvas");
+    c.width=Math.max(1,Math.round(W0*s));c.height=Math.max(1,Math.round(H0*s));const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);
+    return await toBlob(c,"image/jpeg",.9)}
+  catch(e){throw new Error("เปิดไฟล์ภาพ “"+(file.name||"")+"” ไม่ได้ (ไฟล์ HEIC/TIFF ให้บันทึกเป็น JPG หรือ PNG ก่อน)")}
+  finally{URL.revokeObjectURL(url)}
+}
+async function readPdf(file,say){
+  try{await lib("pdfjs")}catch(e){throw new Error("โหลดตัวอ่าน PDF ไม่สำเร็จ (ต้องต่ออินเทอร์เน็ต) ลองกด “วางข้อความ” แทน")}
+  const pj=window.pdfjsLib;pj.GlobalWorkerOptions.workerSrc=LIBS.pdfw;
+  let pdf;try{pdf=await pj.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise}catch(e){throw new Error("เปิดไฟล์ PDF ไม่ได้ (อาจมีรหัสผ่านหรือไฟล์เสีย)")}
+  const lines=[];
+  for(let n=1;n<=pdf.numPages;n++){const tc=await(await pdf.getPage(n)).getTextContent(),rows=[];
+    tc.items.forEach(it=>{if(!it.str)return;const y=Math.round(it.transform[5]),x=it.transform[4];let r=rows.find(r=>Math.abs(r.y-y)<=3);if(!r){r={y,its:[]};rows.push(r)}r.its.push({x,w:it.width,s:it.str})});
+    rows.sort((a,b)=>b.y-a.y).forEach(r=>{r.its.sort((a,b)=>a.x-b.x);let s="",end=null;r.its.forEach(i=>{if(end!==null){if(i.x-end>18)s+="\t";else if(i.x-end>1.5&&!/\s$/.test(s)&&!/^\s/.test(i.s))s+=" "}s+=i.s;end=i.x+i.w});lines.push(s)})}
+  if(lines.join("").replace(/\s/g,"").length>=30)return{lines,imgs:[]};
+  // PDF สแกน (ไม่มีข้อความ) → แปลงหน้าเป็นภาพให้ Claude อ่าน
+  if(say)say("PDF นี้เป็นภาพสแกน กำลังแปลงหน้าเป็นรูป…");
+  const blobs=[],cap=Math.min(pdf.numPages,8);
+  for(let n=1;n<=cap;n++){const pg=await pdf.getPage(n),v0=pg.getViewport({scale:1}),sc=Math.min(2.5,1500/v0.width),vp=pg.getViewport({scale:sc}),c=document.createElement("canvas");c.width=Math.round(vp.width);c.height=Math.round(vp.height);
+    const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);await pg.render({canvasContext:g,viewport:vp}).promise;blobs.push(await toBlob(c,"image/jpeg",.88))}
+  return{lines:[],images:blobs,note:pdf.numPages>cap?"อ่านเฉพาะ "+cap+" หน้าแรกของ PDF สแกน":""};
+}
+async function readSheet(file){
+  try{await lib("xlsx")}catch(e){throw new Error("โหลดตัวอ่าน Excel ไม่สำเร็จ (ต้องต่ออินเทอร์เน็ต)")}
+  let wb;try{
+    if(/\.(csv|tsv|txt)$/i.test(file.name||"")){const buf=await file.arrayBuffer();let s;try{s=new TextDecoder("utf-8",{fatal:true}).decode(buf)}catch(e){s=new TextDecoder("windows-874").decode(buf)}wb=XLSX.read(s.replace(/^\ufeff/,""),{type:"string",FS:/\.tsv$/i.test(file.name||"")?"\t":undefined})}
+    else wb=XLSX.read(await file.arrayBuffer(),{type:"array"})}catch(e){throw new Error("เปิดไฟล์ตารางไม่ได้")}
+  const lines=[];wb.SheetNames.forEach(n=>{XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:false,defval:""}).forEach(r=>{const c=r.map(x=>String(x).replace(/\s+/g," ").trim());if(c.some(Boolean))lines.push(c.join("\t").replace(/\t+$/,""))})});
+  return{lines};
+}
+function xmlWalk(root,cb){const W=n=>{for(const c of n.childNodes){if(c.nodeType===1)cb(c,W)}};W(root)}
+async function readPptx(z){
+  const names=Object.keys(z.files).filter(n=>/^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a,b)=>parseInt(a.match(/\d+/)[0])-parseInt(b.match(/\d+/)[0])),lines=[];
+  for(const n of names){const doc=new DOMParser().parseFromString(await z.file(n).async("string"),"application/xml");
+    const par=p=>{let s="";const w=x=>{for(const c of x.childNodes){if(c.nodeType!==1)continue;if(c.localName==="t")s+=c.textContent;else if(c.localName==="br")s+=" ";else w(c)}};w(p);return s};
+    const walk=nd=>{for(const c of nd.childNodes){if(c.nodeType!==1)continue;
+      if(c.localName==="tbl"){for(const tr of c.getElementsByTagNameNS("*","tr")){const cells=[...tr.childNodes].filter(x=>x.nodeType===1&&x.localName==="tc").map(tc=>[...tc.getElementsByTagNameNS("*","p")].map(par).join(" ").trim());if(cells.some(Boolean))lines.push(cells.join("\t"))}}
+      else if(c.localName==="p")lines.push(par(c));else walk(c)}};
+    walk(doc.documentElement);lines.push("")}
+  return{lines};
+}
+async function readOdf(z){
+  const f=z.file("content.xml");if(!f)throw new Error("อ่านไฟล์ OpenDocument ไม่ได้");const doc=new DOMParser().parseFromString(await f.async("string"),"application/xml"),lines=[];
+  const txt=p=>{let s="";const w=x=>{for(const c of x.childNodes){if(c.nodeType===3)s+=c.nodeValue;else if(c.nodeType===1){const l=c.localName;if(l==="tab")s+="\t";else if(l==="s")s+=" ";else if(l==="line-break")s+=" ";else w(c)}}};w(p);return s};
+  const walk=nd=>{for(const c of nd.childNodes){if(c.nodeType!==1)continue;const l=c.localName;
+    if(l==="table-row"){const cells=[...c.childNodes].filter(x=>x.nodeType===1&&/table-cell/.test(x.localName)).map(x=>txt(x).trim());if(cells.some(Boolean))lines.push(cells.join("\t").replace(/\t+$/,""))}
+    else if(l==="p"||l==="h")lines.push(txt(c));else walk(c)}};
+  walk(doc.documentElement);return{lines};
+}
+function rtfToText(src){let out="",i=0,depth=0,skip=-1,uc=1;const st=[],dec=new TextDecoder("windows-874");
+  const SK=["fonttbl","colortbl","stylesheet","info","pict","header","footer","footnote","themedata","datastore"];
+  while(i<src.length){const c=src[i];
+    if(c==="{"){depth++;st.push(uc);i++;continue}
+    if(c==="}"){if(skip===depth)skip=-1;depth--;uc=st.pop()||1;i++;continue}
+    if(c==="\\"){const m=src.slice(i,i+40).match(/^\\([a-zA-Z]+)(-?\d+)? ?|^\\'([0-9a-fA-F]{2})|^\\([^a-zA-Z])/);if(!m){i++;continue}i+=m[0].length;
+      if(m[3]){if(skip<0)out+=dec.decode(new Uint8Array([parseInt(m[3],16)]));continue}
+      if(m[4]){const ch=m[4];if(ch==="*")skip=depth;else if(ch==="~")out+=" ";else if(skip<0&&"\\{}".includes(ch))out+=ch;continue}
+      const w=m[1],n=m[2];
+      if(SK.includes(w)&&skip<0){skip=depth}
+      else if(skip<0){if(w==="par"||w==="line"||w==="row"||w==="sect")out+="\n";else if(w==="tab"||w==="cell")out+="\t";else if(w==="u"){let v=parseInt(n);if(v<0)v+=65536;out+=String.fromCharCode(v);i+=uc}else if(w==="uc")uc=parseInt(n)||1}
+      continue}
+    if(c==="\r"||c==="\n"){i++;continue}
+    if(skip<0)out+=c;i++}
+  return out}
+function htmlToLines(html){
+  const doc=new DOMParser().parseFromString(html,"text/html"),lines=[],BLK=/^(p|div|li|h[1-6]|section|article|br|ul|ol|pre|blockquote|header|footer)$/i;let cur="";
+  const flush=()=>{if(cur.trim())lines.push(cur.replace(/[  ]+/g," ").trim());cur=""};
+  const walk=n=>{for(const c of n.childNodes){
+    if(c.nodeType===3){cur+=c.nodeValue.replace(/\s+/g," ")}
+    else if(c.nodeType===1){const t=c.tagName.toLowerCase();if(/^(script|style|head)$/.test(t))continue;
+      if(t==="tr"){flush();const cells=[...c.children].map(x=>x.textContent.replace(/\s+/g," ").trim());if(cells.some(Boolean))lines.push(cells.join("\t").replace(/\t+$/,""));continue}
+      if(BLK.test(t))flush();walk(c);if(BLK.test(t))flush()}}};
+  walk(doc.body||doc.documentElement);flush();return lines}
+function binaryText(buf){
+  const u=new Uint8Array(buf),okc=c=>(c>=0x20&&c<0x7f)||(c>=0x0e01&&c<=0x0e5b)||c===9||c===13||c===7||c===0xa0||(c>=0x2013&&c<=0x201d);
+  const runs16=off=>{let cur="",out=[];for(let i=off;i+1<u.length;i+=2){const c=u[i]|u[i+1]<<8;if(okc(c)){cur+=c===13?"\n":c===7?"\t":String.fromCharCode(c)}else{if(cur.replace(/\s/g,"").length>=6)out.push(cur);cur=""}}if(cur.replace(/\s/g,"").length>=6)out.push(cur);return out.join("\n")};
+  const dec=new TextDecoder("windows-874"),runs8=()=>{let cur=[],out=[];const flush=()=>{if(cur.length>=8)out.push(dec.decode(new Uint8Array(cur)));cur=[]};for(let i=0;i<u.length;i++){const b=u[i];if((b>=0x20&&b<0x7f)||(b>=0xa1&&b<=0xfb)||b===9)cur.push(b);else if(b===13||b===7){cur.push(b===7?9:10)}else flush()}flush();return out.join("\n")};
+  const cands=[runs16(0),runs16(1),runs8()];cands.sort((a,b)=>b.length-a.length);
+  return cands[0].split(/\r?\n/);
+}
+async function readZip(file,ext,say){
+  await lib("jszip");let z;try{z=await JSZip.loadAsync(file)}catch(e){throw new Error("เปิดไฟล์บีบอัดไม่ได้")}
+  if(z.file("word/document.xml"))return readDocx(file);
+  if(Object.keys(z.files).some(n=>/^ppt\/slides\/slide\d+\.xml$/.test(n)))return readPptx(z);
+  if(z.file("xl/workbook.xml"))return readSheet(file);
+  if(z.file("content.xml")&&/vnd\.oasis\.opendocument/.test(await(z.file("mimetype")?z.file("mimetype").async("string"):Promise.resolve(""))))return readOdf(z);
+  if(z.file("content.xml"))return readOdf(z);
+  throw new Error("ไม่รู้จักชนิดของไฟล์บีบอัดนี้ ใช้ Word, PDF, ภาพ, Excel, PowerPoint หรือ .txt");
+}
+async function readAny(file,say){
+  const name=file.name||"",ext=(name.split(".").pop()||"").toLowerCase(),head=new Uint8Array(await file.slice(0,8).arrayBuffer());
+  const isZip=head[0]===0x50&&head[1]===0x4b,isPdf=head[0]===0x25&&head[1]===0x50&&head[2]===0x44&&head[3]===0x46,isOle=head[0]===0xd0&&head[1]===0xcf&&head[2]===0x11&&head[3]===0xe0,isRtf=head[0]===0x7b&&head[1]===0x5c&&head[2]===0x72;
+  if(isPdf||ext==="pdf"||file.type==="application/pdf")return readPdf(file,say);
+  if((file.type||"").startsWith("image/")||/^(png|jpe?g|jfif|webp|gif|bmp|svg|avif|heic|heif|tiff?)$/.test(ext))return{images:[await toJpeg(file)]};
+  if(isRtf||ext==="rtf")return{lines:rtfToText(await file.text()).split(/\r?\n/)};
+  if(isZip)return readZip(file,ext,say);
+  if(isOle){if(ext==="xls"||ext==="xlt"||ext==="xlsb")return readSheet(file);
+    return{lines:binaryText(await file.arrayBuffer()),noisy:true,note:"ไฟล์ ."+(ext||"doc")+" รุ่นเก่า ระบบอ่านแบบประมาณ ตรวจข้อมูลทุกช่องก่อนนำเข้า"}}
+  if(/^(xlsx|xlsm|xls|ods|csv|tsv)$/.test(ext))return readSheet(file);
+  const buf=await file.arrayBuffer(),u=new Uint8Array(buf);let nul=0;for(let i=0;i<Math.min(u.length,4000);i++)if(u[i]===0)nul++;
+  if(nul>8)return{lines:binaryText(buf),noisy:true,note:"ชนิดไฟล์นี้ไม่รู้จัก ระบบอ่านข้อความแบบประมาณ ตรวจข้อมูลทุกช่องก่อนนำเข้า"};
+  let s;try{s=new TextDecoder("utf-8",{fatal:true}).decode(buf)}catch(e){s=new TextDecoder("windows-874").decode(buf)}
+  if(/^(html?|xhtml|mht|mhtml|xml)$/.test(ext)||/^\s*<(!doctype|html)/i.test(s))return{lines:htmlToLines(s)};
+  return{lines:s.split(/\r?\n/)};
+}
+const SPEC_PROMPT="You are reading a food-product ingredient / QC specification written in Thai and/or English. Extract EVERY product in it. Reply with ONLY JSON: {\"products\":[{\"code\":\"\",\"nameTh\":\"\",\"nameEn\":\"\",\"menu\":\"\",\"desc\":\"\",\"allergen\":\"\",\"phys\":[[\"label\",\"value with unit\"]],\"store\":[[\"label\",\"value with unit\"]],\"recv\":[\"text\"],\"rej\":[\"text\"],\"defect\":[[\"label\",\"limit with unit\"]],\"cautions\":[\"text\"]}]}. Rules: copy the text exactly as written in its original language, never translate or invent; keep numbers, ranges, units and symbols exact; each measurement is a label plus a value (for example [\"น้ำหนักต่อถุง\",\"1000 กรัมต่อถุง\"]); phys = physical standards, store = storage temperature and shelf life, recv = condition at receiving, rej = unacceptable defects, defect = acceptable defects with limits, cautions = precautions; use empty strings or empty arrays when absent; ignore logos, page numbers and decoration.";
+async function aiExtract(text,images){
+  if(!SM)throw new Error("ไฟล์ภาพ เอกสารสแกน หรือไฟล์รุ่นเก่า ต้องเปิดผ่านลิงก์ Claude เพื่อให้ Claude อ่าน หรือกด “วางข้อความ” แทน");
+  const opts={modelTier:"default"};
+  if(images&&images.length){let lim=null;try{lim=await SM.limits()}catch(e){}
+    if(!lim||!lim.images)throw new Error("มุมมองนี้ส่งภาพให้ Claude ไม่ได้ ลองเปิดลิงก์ในเบราว์เซอร์ หรือกด “วางข้อความ”");
+    opts.images=images.slice(0,lim.images.maxCount)}
+  let j;try{j=await SM.json(SPEC_PROMPT+(images&&images.length?"\n\nThe attached image(s) are the page(s) of the specification, in order.":"")+(text?"\n\nSpecification text:\n"+text.slice(0,200000):""),opts)}
+  catch(e){throw new Error(e&&e.code==="not_granted"?"ต้องอนุญาตให้ Claude อ่านไฟล์ก่อน (กดอนุญาตในหน้าต่างที่ขึ้น)":"Claude อ่านสเปคนี้ไม่สำเร็จ ลองใหม่ หรือใช้ไฟล์ที่ชัดกว่า / กด “วางข้อความ”")}
+  const arr=Array.isArray(j)?j:(Array.isArray(j&&j.products)?j.products:(j&&typeof j==="object"?[j]:[]));
+  const S2=v=>String(v==null?"":v).trim(),pairs=a=>(Array.isArray(a)?a:[]).map(r=>Array.isArray(r)?[S2(r[0]),S2(r[1])]:[S2(r),""]).filter(r=>r[0]),strs=a=>(Array.isArray(a)?a:[]).map(r=>Array.isArray(r)?S2(r.join(" ")):S2(r)).filter(Boolean);
+  return arr.filter(x=>x&&typeof x==="object").map(x=>({code:S2(x.code),nameTh:S2(x.nameTh),nameEn:S2(x.nameEn),menu:S2(x.menu),desc:S2(x.desc),allergen:S2(x.allergen),phys:pairs(x.phys),store:pairs(x.store),defect:pairs(x.defect),recv:strs(x.recv).map(s=>[s,""]),rej:strs(x.rej).map(s=>[s,""]),cautions:strs(x.cautions),photos:[],extra:[]}));
+}
+async function handleSpecFiles(files){
+  R={step:"busy",msg:"กำลังอ่านไฟล์…"};showReview();
+  try{
+    const all=[],extras=[],names=[],notes=[],imgs=[],texts=[];
+    for(const f of files){names.push(f.name);sayR("กำลังอ่าน “"+f.name+"”…");
+      const d=await readAny(f,sayR);if(d.note)notes.push(d.note);
+      if(d.images&&d.images.length)imgs.push(...d.images);
+      if(d.lines&&d.lines.some(l=>l.trim())){
+        if(d.noisy&&SM)texts.push(d.lines.join("\n"));
+        else{const ps=parseSpec(d.lines,d.imgAt);if(ps.length){all.push(...ps);extras.push(...(ps.extras||[]))}else texts.push(d.lines.join("\n"))}}}
+    if(imgs.length||(texts.length&&SM)){sayR(imgs.length?"Claude กำลังอ่านภาพ/สแกน "+imgs.length+" หน้า… (อาจใช้เวลา 10–60 วินาที)":"Claude กำลังจัดข้อมูลสเปค…");
+      const ps=await aiExtract(texts.join("\n\n"),imgs);all.push(...ps)}
+    if(!all.length){R={step:"err",text:texts.join("\n"),n:texts.join("\n").split("\n").filter(l=>l.trim()).length,msg:texts.length?"":"ไม่พบข้อมูลสินค้าในไฟล์นี้"};showReview();return}
+    all.extras=extras;toReview(all,extras.map(src=>({src})),names.join(", "));
+    if(notes.length&&R)R.note=notes.join(" · ");showReview();
+  }catch(x){R={step:"err",msg:x.message||String(x)};showReview()}
+}
+$("specFile").onchange=e=>{const fs=[...e.target.files];e.target.value="";if(fs.length)handleSpecFiles(fs)};
+$("specCam").onchange=e=>{const fs=[...e.target.files];e.target.value="";if(fs.length)handleSpecFiles(fs)};
 function openPaste(){R={step:"paste"};showReview()}
 function closeReview(){R=null;const o=document.getElementById("ov");if(o)o.remove()}
 function rvThumbs(imgs,ck,xk,extra){return (imgs||[]).length?`<div class="rthumbs">${imgs.map((m,j)=>`<span class="t"><label style="margin:0"><input type="checkbox" ${m.on?"checked":""} data-${ck}="${extra}${j}"><img src="${m.src}"></label><button class="btn x" data-${xk}="${extra}${j}">✕</button></span>`).join("")}</div>`:""}
@@ -372,12 +494,12 @@ function showReview(){
   let o=document.getElementById("ov");if(!o){o=document.createElement("div");o.id="ov";o.className="ov";document.body.appendChild(o)}
   if(!R){o.remove();return}
   let h="";
-  if(R.step==="busy")h=`<div class="mdh"><b>กำลังอ่านสเปค…</b></div><div class="mdb"><p class="note">รอสักครู่</p></div>`;
+  if(R.step==="busy")h=`<div class="mdh"><b>กำลังอ่านสเปค…</b></div><div class="mdb"><p class="note">${esc(R.msg||"รอสักครู่")}</p></div>`;
   else if(R.step==="err")h=`<div class="mdh"><b>อ่านสเปคไม่สำเร็จ</b></div><div class="mdb"><p>${esc(R.msg||"อ่านไฟล์ได้ "+(R.n||0)+" บรรทัด แต่ไม่พบรูปแบบสินค้า (บรรทัดที่ขึ้นต้นด้วยรหัสตัวเลข 5 หลักขึ้นไป ตามด้วยชื่อสินค้า)")}</p>${R.text?`<p class="note">ข้อความที่อ่านได้ (แก้ไขแล้วกด “ลองอีกครั้ง” ได้):</p><textarea id="errTx" style="min-height:160px">${esc(R.text.slice(0,6000))}</textarea>`:""}</div><div class="mdf">${R.text?`<button class="btn p" onclick="ingest($('errTx').value.split(/\\r?\\n/),[],'edit')">ลองอีกครั้ง</button>`:""}<button class="btn" onclick="openPaste()">วางข้อความ</button><button class="btn p" onclick="closeReview()">ปิด</button></div>`;
   else if(R.step==="paste")h=`<div class="mdh"><b>วางข้อความสเปค</b></div><div class="mdb"><textarea id="pasteTx" style="min-height:240px" placeholder="วางข้อความจากสเปคที่นี่ (ขึ้นต้นด้วยรหัสสินค้า แล้วตามด้วยชื่อ)"></textarea></div><div class="mdf"><button class="btn" onclick="closeReview()">ยกเลิก</button><button class="btn p" onclick="ingest($('pasteTx').value.split(/\\r?\\n/),[],'paste')">ดึงข้อมูล</button></div>`;
   else{
     const p=R.products[R.sel];
-    h=`<div class="mdh"><b>ตรวจและเลือกข้อมูลที่จะนำเข้า${R.name?` · <span style="font-weight:400;font-size:12px">${esc(R.name)}</span>`:""}</b>${R.products.length>1?`<select id="rvProd" style="width:auto">${R.products.map((q,i)=>`<option value="${i}" ${i===R.sel?"selected":""}>${esc(q.single.code.v)} ${esc(q.single.nameTh.v)}</option>`).join("")}</select>`:""}</div><div class="mdb" id="rvB">
+    h=`<div class="mdh">${R.note?`<span class="note" style="flex-basis:100%;margin:0;color:#9a6200">⚠ ${esc(R.note)}</span>`:""}<b>ตรวจและเลือกข้อมูลที่จะนำเข้า${R.name?` · <span style="font-weight:400;font-size:12px">${esc(R.name)}</span>`:""}</b>${R.products.length>1?`<select id="rvProd" style="width:auto">${R.products.map((q,i)=>`<option value="${i}" ${i===R.sel?"selected":""}>${esc(q.single.code.v)} ${esc(q.single.nameTh.v)}</option>`).join("")}</select>`:""}</div><div class="mdb" id="rvB">
     <div class="rs"><b>รูปสินค้า (ติ๊กได้ไม่เกิน 3 รูป)<span><button class="btn" data-padd="1">＋ เพิ่มรูป</button></span></b>${p.photos.length?rvThumbs(p.photos,"pim","pimx",""):'<div class="note">ไม่พบรูปสินค้าในไฟล์ · กด “＋ เพิ่มรูป”</div>'}</div>
     <div class="rs"><b>ข้อมูลสินค้า</b>${SINGLES.map(([k,n])=>{const it=p.single[k];return `<div class="rr ${it.on?"":"off"}"><input type="checkbox" ${it.on?"checked":""} data-f="on" data-s="single" data-k="${k}"><span class="lb">${n}</span>${k==="desc"?`<textarea data-f="v" data-s="single" data-k="${k}">${esc(it.v)}</textarea>`:`<input type="text" value="${esc(it.v)}" data-f="v" data-s="single" data-k="${k}">`}</div>`}).join("")}</div>
     ${SECS.map(([k,n,c])=>`<div class="rs"><b>${n}<span><button class="btn" data-all="${k}">ทั้งหมด</button> <button class="btn" data-none="${k}">ล้าง</button> <button class="btn" data-add="${k}">+ เพิ่มเอง</button></span></b>${p.lists[k].map((it,i)=>rvRow("list",k,i,it,c===2)).join("")||'<div class="note">ไม่พบข้อมูลในไฟล์ · กด “+ เพิ่มเอง”</div>'}</div>`).join("")}
@@ -464,8 +586,8 @@ function listsUI(){
 /* ===== ส่งออกไฟล์ ===== */
 let DL=null;
 (async()=>{try{DL=(window.claude&&window.claude.use)?await window.claude.use("downloads"):null}catch(e){DL=null}})();
-const LIBS={jszip:"https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",pdfjs:"https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",pdfw:"https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js",html2canvas:"https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js",jspdf:"https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js",docx:"https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js",pptx:"https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"};
-const LCHK={jszip:()=>window.JSZip,pdfjs:()=>window.pdfjsLib,html2canvas:()=>window.html2canvas,jspdf:()=>window.jspdf,docx:()=>window.docx,pptx:()=>window.PptxGenJS};
+const LIBS={xlsx:"https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",jszip:"https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",pdfjs:"https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",pdfw:"https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js",html2canvas:"https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js",jspdf:"https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js",docx:"https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js",pptx:"https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"};
+const LCHK={xlsx:()=>window.XLSX,jszip:()=>window.JSZip,pdfjs:()=>window.pdfjsLib,html2canvas:()=>window.html2canvas,jspdf:()=>window.jspdf,docx:()=>window.docx,pptx:()=>window.PptxGenJS};
 const LP={};
 function lib(n){if(LCHK[n]())return Promise.resolve();return LP[n]||(LP[n]=new Promise((ok,no)=>{const s=document.createElement("script");s.src=LIBS[n];s.onload=()=>LCHK[n]()?ok():no(new Error("โหลดไลบรารีไม่สำเร็จ"));s.onerror=()=>{delete LP[n];no(new Error("โหลดไลบรารีไม่สำเร็จ ตรวจสอบอินเทอร์เน็ต"))};document.head.appendChild(s)}))}
 function ctx(){const V=view(),L=LB[S.lang==="orig"?"th":S.lang]||LB.th;return{V,L,photos:S.showPhotos!==false?S.photos.slice(0,MAXP):[],dp:S.dpOn!==false,th:themeFor()}}
@@ -827,12 +949,13 @@ function openGuide(){
    <li>ชิปที่ไม่มีโลโก้จะแสดงเป็นชื่อแบรนด์ในกรอบ</li>
    <li><b>สีเอกสาร</b> ระบบดึงอย่างน้อย 3 สีจากโลโก้ (สีหลัก สีรอง สีเข้ม) ใช้กับหัวเอกสาร เส้น และแถบล่าง เลือกแบรนด์ที่จะใช้เป็นธีมได้ ปรับสีเองได้ หรือกดสีจากแถบ “สีที่พบในโลโก้” และกด “ดึงสีจากโลโก้ใหม่” เพื่อกลับค่าเดิม</li></ul></details>
   <details class="gd"><summary>3. แนบสเปคและเลือกข้อมูลก่อนนำเข้า</summary>
-   <ol><li>กด “📎 แนบสเปค” แล้วเลือกไฟล์ Word (.docx), PDF หรือ .txt หรือกด “วางข้อความ”</li>
+   <ol><li>กด “📎 แนบสเปค” แล้วเลือกไฟล์ได้เกือบทุกชนิด: Word (.docx / .doc เก่า), PDF (รวมเอกสารสแกน), รูปภาพ (JPG, PNG, WebP ฯลฯ), Excel / CSV, PowerPoint, RTF, HTML, OpenDocument และ .txt เลือกได้หลายไฟล์พร้อมกัน (เช่นหลายหน้าที่ถ่ายรูป) หรือกด “📷 ถ่ายรูปสเปค” บนมือถือ หรือกด “วางข้อความ”</li>
+   <li>ภาพ เอกสารสแกน และ .doc เก่า ให้ Claude อ่านและจัดข้อมูลให้ (ใช้ได้เมื่อเปิดผ่านลิงก์ Claude ครั้งแรกจะขอสิทธิ์) ผลอ่านจากภาพอาจคลาดเคลื่อน ตรวจตัวเลขทุกช่องก่อนนำเข้า</li>
    <li>หน้าต่าง “ตรวจและเลือกข้อมูลที่จะนำเข้า” แสดงข้อมูลที่พบแยกตามหมวด ติ๊กเลือกทีละรายการ แก้ข้อความได้ ✕ เพื่อลบ “+ เพิ่มเอง” เพื่อเพิ่ม และปุ่ม “ทั้งหมด / ล้าง” ช่วยเลือกทั้งหมวด</li>
    <li>ไฟล์ที่มีหลายสินค้า ให้เลือกสินค้าจากรายการด้านบน</li>
    <li>รูปในไฟล์ Word จะถูกจัดตามหัวข้อ: รูปใกล้ชื่อสินค้าเป็นรูปสินค้า (ไม่เกิน 3 รูป) รูปใต้รายการไหนอยู่กับรายการนั้น ตรวจแล้วติ๊กออกเพื่อไม่ใช้ กด ✕ เพื่อลบ กด 📷 หรือ “＋ เพิ่มรูป” เพื่อเพิ่มเอง</li>
    <li>เลือก “แทนที่ส่วนที่เลือก” หรือ “เพิ่มต่อท้าย” แล้วกด <b>“นำเข้าฟอร์ม”</b></li></ol>
-   <p>ระบบจับสินค้าจากบรรทัดที่ขึ้นต้นด้วยรหัสตัวเลขยาว 5 หลักขึ้นไปตามด้วยชื่อสินค้า ช่องติ๊กฮาลาล YES/NO ในไฟล์ Word อ่านไม่ได้ ต้องเลือกเองในฟอร์ม ไฟล์ PDF ดึงรูปไม่ได้</p></details>
+   <p>ระบบจับสินค้าจากบรรทัดที่ขึ้นต้นด้วยรหัสตัวเลขยาว 5 หลักขึ้นไปตามด้วยชื่อสินค้า ช่องติ๊กฮาลาล YES/NO ในไฟล์ Word อ่านไม่ได้ ต้องเลือกเองในฟอร์ม ไฟล์ PDF ภาพ และไฟล์ชนิดอื่นดึงรูปภาพในไฟล์ไม่ได้ (ดึงเฉพาะข้อความ) ส่วนรูปในไฟล์ Word ดึงให้ตามหัวข้อ</p></details>
   <details class="gd"><summary>4. รูปสินค้าและรูปประกอบรายการ</summary>
    <ul><li><b>รูปสินค้า</b> แนบได้สูงสุด 3 รูป แสดงทางขวาของกรอบชื่อสินค้า ติ๊ก “ใส่รูปสินค้าในเอกสาร” เพื่อเลือกว่าจะใส่หรือไม่ รูปไม่หาย</li>
    <li><b>รูปประกอบรายการ / ตำหนิ</b> กด 📷 ที่แถวไหนก็ได้ ใน 5 กล่อง แนบได้หลายรูป (สูงสุด 6 รูปต่อรายการ) รูปแสดงใต้รายการนั้นในเอกสาร ติ๊ก “ใส่รูปประกอบรายการ” เพื่อซ่อนหรือแสดงทั้งหมด</li></ul></details>
@@ -855,7 +978,7 @@ function openGuide(){
    <p>บนลิงก์ Claude คลังใช้ร่วมกันได้ตามสิทธิ์ของลิงก์ การบันทึกต้องมีสิทธิ์แก้ไข ส่วนไฟล์ HTML ในรีโปเก็บในเบราว์เซอร์เครื่องนั้นเท่านั้น</p></details>
   <details class="gd"><summary>8. ปัญหาที่พบบ่อย</summary>
    <table><tr><th>อาการ</th><th>สาเหตุ / วิธีแก้</th></tr>
-   <tr><td>แนบสเปคไม่ได้</td><td>ไฟล์ .doc รุ่นเก่า ให้บันทึกเป็น .docx PDF ที่เป็นภาพสแกนอ่านไม่ได้ หรือกด “วางข้อความ”</td></tr>
+   <tr><td>แนบสเปคไม่ได้ / อ่านภาพไม่ได้</td><td>ภาพ เอกสารสแกน และ .doc เก่าต้องเปิดผ่านลิงก์ Claude และกดอนุญาตให้ Claude อ่าน ไฟล์ HEIC/TIFF ให้บันทึกเป็น JPG ก่อน ภาพที่เบลอหรือเอียงมากอ่านได้ไม่ครบ ลองถ่ายใหม่หรือกด “วางข้อความ”</td></tr>
    <tr><td>นำเข้าแล้วไม่พบสินค้า</td><td>บรรทัดสินค้าต้องขึ้นต้นด้วยรหัสตัวเลข 5 หลักขึ้นไป แก้ข้อความในหน้าต่างแล้วกด “ลองอีกครั้ง”</td></tr>
    <tr><td>ปุ่มแปลกดไม่ได้</td><td>ต้องเปิดผ่านลิงก์ Claude</td></tr>
    <tr><td>บันทึกเข้าคลังไม่สำเร็จ</td><td>ไม่มีสิทธิ์แก้ไขลิงก์ ขอสิทธิ์จากเจ้าของลิงก์</td></tr>
