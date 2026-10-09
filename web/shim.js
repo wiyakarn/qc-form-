@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded",()=>{ready.then(ok=>{if(!ok)return;
       b.textContent="✔ นำเข้าแล้ว "+n+" รายการ";setTimeout(()=>location.reload(),1500)}
     catch(e){b.disabled=false;b.textContent="นำเข้าไม่สำเร็จ ลองอีกครั้ง";console.error(e)}})}}).catch(()=>{});
   mk("ออกจากระบบ",logout);
-  const tb=document.getElementById("topbar");if(tb){const b=document.createElement("button");b.className="btn";b.textContent="ออกจากระบบ";b.title="ออกจากระบบ";b.onclick=logout;tb.appendChild(b)}})});
+  const tb=document.getElementById("tbMenu")||document.getElementById("topbar");if(tb){const b=document.createElement("button");b.className="btn";b.textContent="ออกจากระบบ";b.title="ออกจากระบบ";b.onclick=logout;tb.appendChild(b)}})});
 
 /* ---------- db shim (document/collection API over tables) ---------- */
 const P=p=>String(p).split("/");
