@@ -470,7 +470,6 @@ window.claude={use:async n=>{const ok=await ready;if(!ok)return null;return n===
     <div class="hm-pill" id="hmPill">☁ กำลังเชื่อมต่อ…</div>
     <button class="btn" data-go="guide" data-i="guide">📖 คู่มือการใช้งาน</button>
     <button class="btn" data-go="admin" id="hmAdmin" data-i="admin" hidden>👥 ดูการใช้งานของผู้ใช้</button>
-    <div class="hm-thm" id="hmThm"></div>
     <div class="lsw" role="group" aria-label="Language"><button data-ui="th">ไทย</button><button data-ui="en">EN</button><button data-ui="zh">中文</button></div>
     <div class="note hm-note" data-i="note.log">ระบบบันทึกเวลาเข้าใช้และการทำงาน เพื่อให้ผู้ดูแลตรวจสอบ</div>
   </aside>
@@ -1484,11 +1483,10 @@ const HF={brand:"",days:0,more:false,draft:false,q:""};
 
 /* ธีมสีตามเทรน: โหมดอัตโนมัติสลับทุกสัปดาห์ */
 const THEMES=[["navy","#13203c","#2a4278","#1f8f8a"],["mocha","#3b2a25","#6b4f43","#c08a6b"],["lavender","#2b2457","#5a4fcf","#a78bfa"],["sage","#1f3a2e","#3f7a5c","#9bc4a0"],["coral","#4a1f2c","#c2445a","#f28b6b"],["ocean","#0b2c4a","#1b6ca8","#3fc1c9"]];
-function applyTheme(){let pick="auto";try{pick=localStorage.getItem("pi.theme")||"auto"}catch(e){}
+function applyTheme(){const pick="auto";
   const wk=Math.floor(Date.now()/6048e5),th=pick==="auto"?THEMES[wk%THEMES.length]:(THEMES.find(x=>x[0]===pick)||THEMES[0]),h=$("home");
   h.style.setProperty("--t1",th[1]);h.style.setProperty("--t2",th[2]);h.style.setProperty("--t3",th[3]);h.style.setProperty("--t4",th[3]);
-  const bx=$("hmThm");if(bx){bx.innerHTML=`<span>${t("theme")}</span><button class="au${pick==="auto"?" on":""}" data-th="auto">${t("theme.auto")}</button>`+THEMES.map(x=>`<button data-th="${x[0]}" class="${pick===x[0]?"on":""}" title="${x[0]}" aria-label="${x[0]}" style="background:linear-gradient(135deg,${x[1]},${x[3]})"></button>`).join("")}}
-document.addEventListener("click",e=>{const b=e.target.closest("[data-th]");if(!b||!$("hmThm")||!$("hmThm").contains(b))return;try{localStorage.setItem("pi.theme",b.dataset.th)}catch(x){}applyTheme()});
+}
 const hasContent=s=>!!(s.code||s.nameTh||s.nameEn||s.menu||s.desc||s.allergen||(s.photos||[]).length||["phys","store","recv","rej","defect"].some(k=>(s[k]||[]).length));
 let USER_EDITED=false;document.querySelector(".panel").addEventListener("input",e=>{if(e.isTrusted)USER_EDITED=true});
 let HM_ANIM=true;
