@@ -85,6 +85,10 @@ function openUsers(){
     <div class="note" style="margin:4px 0 8px">คนที่จะสมัครเองต้องใส่รหัสนี้ แจกเฉพาะคนที่อนุญาต ถ้ารหัสหลุด กด “สุ่มรหัสใหม่” (คนที่สมัครแล้วไม่ได้รับผลกระทบ)</div>
     <div class="row"><input type="text" id="invCode" readonly style="font-family:ui-monospace,Menlo,monospace;font-size:15px;letter-spacing:.5px"><button class="btn" id="invCopy" type="button">คัดลอก</button><button class="btn" id="invNew" type="button">สุ่มรหัสใหม่</button></div>
     <div class="note" id="invMsg" role="status"></div></div>
+    <div class="hm-sec" style="box-shadow:none;margin-bottom:12px"><b style="font-size:14px">💾 ขนาดพื้นที่จัดเก็บของระบบ (MB)</b>
+    <div class="note" style="margin:4px 0 8px">ใส่ขนาดตามแพ็กเกจ Supabase ที่ใช้ (Free = 500, Pro = 8192) ระบบจะเตือนผู้ใช้เมื่อใช้ไป 80% และ 95%</div>
+    <div class="row"><input type="number" id="stLim" min="100" max="1000000" step="100"><button class="btn p" id="stSave" type="button">บันทึก</button></div>
+    <div class="note" id="stMsg" role="status"></div></div>
     <div class="hm-sec" style="box-shadow:none;margin-bottom:12px"><b style="font-size:14px">เพิ่มผู้ใช้ใหม่</b>
     <div class="row" style="margin-top:8px"><input type="text" id="nuName" placeholder="ชื่อที่แสดง"><input type="email" id="nuEmail" placeholder="อีเมล"></div>
     <div class="row"><input type="text" id="nuPw" placeholder="รหัสผ่านเริ่มต้น (8 ตัวขึ้นไป)"><button class="btn" id="nuGen" type="button">สุ่มรหัส</button><button class="btn p" id="nuAdd" type="button">เพิ่มผู้ใช้</button></div>
@@ -96,6 +100,9 @@ function openUsers(){
   o.querySelector("#invCopy").onclick=async()=>{const v=o.querySelector("#invCode").value;try{await navigator.clipboard.writeText(v);o.querySelector("#invMsg").textContent="คัดลอกรหัสแล้ว"}catch(e){o.querySelector("#invCode").select();o.querySelector("#invMsg").textContent="กด Ctrl+C เพื่อคัดลอก"}};
   o.querySelector("#invNew").onclick=async()=>{try{const{code}=await fn("admin-users",{action:"setcode",random:true});o.querySelector("#invCode").value=code;o.querySelector("#invMsg").textContent="สร้างรหัสใหม่แล้ว รหัสเก่าใช้ไม่ได้อีก"}catch(e){o.querySelector("#invMsg").textContent="สร้างรหัสไม่สำเร็จ"}};
   loadCode();
+  (async()=>{try{const{data}=await sb.from("app_settings").select("value").eq("key","db_limit_mb").maybeSingle();o.querySelector("#stLim").value=data?data.value:"500"}catch(e){}})();
+  o.querySelector("#stSave").onclick=async()=>{const v=Math.round(+o.querySelector("#stLim").value),m=o.querySelector("#stMsg");if(!(v>=100&&v<=1000000)){m.style.color="#c0392b";m.textContent="ใส่ตัวเลข 100–1,000,000";return}
+    const{error}=await sb.from("app_settings").update({value:String(v)}).eq("key","db_limit_mb");m.style.color=error?"#c0392b":"#1d6f42";m.textContent=error?"บันทึกไม่สำเร็จ":"บันทึกแล้ว";if(!error&&window.__storeCheck)window.__storeCheck()};
   o.querySelector("#nuGen").onclick=()=>{o.querySelector("#nuPw").value=genPw()};
   o.querySelector("#nuAdd").onclick=async()=>{const email=o.querySelector("#nuEmail").value.trim(),pw=o.querySelector("#nuPw").value,name=o.querySelector("#nuName").value.trim();
     try{await fn("admin-users",{action:"create",email,password:pw,name});msg("เพิ่มผู้ใช้แล้ว แจ้งอีเมลและรหัสผ่านให้ผู้ใช้ (ให้เปลี่ยนรหัสเองภายหลังได้)");o.querySelector("#nuEmail").value="";o.querySelector("#nuName").value="";load()}catch(e){msg(ADM_ERR[e.code]||(e.code==="409"?"":e.message),true)}};
@@ -192,5 +199,6 @@ sample.limits=async()=>({images:{maxCount:10,maxBytes:5*1024*1024}});
 
 const dlApi={async save({filename,data}){const b=data instanceof Blob?data:new Blob([data]);const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}};
 
+window.__storage=async()=>{const{data,error}=await sb.rpc("storage_usage");if(error)throw error;return data};
 window.claude={use:async n=>{const ok=await ready;if(!ok)return null;return n==="db"?dbApi:n==="user"?userApi:n==="sample"?sample:n==="downloads"?dlApi:null}};
 })();
