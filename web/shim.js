@@ -199,6 +199,7 @@ sample.limits=async()=>({images:{maxCount:10,maxBytes:5*1024*1024}});
 
 const dlApi={async save({filename,data}){const b=data instanceof Blob?data:new Blob([data]);const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}};
 
+window.__storageOwners=async()=>{const{data,error}=await sb.rpc("storage_by_owner");if(error)throw error;return data||[]};
 window.__storage=async()=>{const{data,error}=await sb.rpc("storage_usage");if(error)throw error;return data};
 window.claude={use:async n=>{const ok=await ready;if(!ok)return null;return n==="db"?dbApi:n==="user"?userApi:n==="sample"?sample:n==="downloads"?dlApi:null}};
 })();
