@@ -288,6 +288,15 @@ label{color:#5b6070;font-weight:600}
 .mnav button:disabled{opacity:.4;cursor:default}.mnav button:active:not(:disabled){transform:scale(.97)}
 .mnav-h{position:static;margin:14px 0 0;padding:0;background:none;border:0;backdrop-filter:none}}
 .hm-rv{border:1px solid #d3d9e8;background:#fff;color:#13203c}
+
+/* นาฬิกาบน Dashboard */
+.hm-clock{position:absolute;right:26px;bottom:20px;text-align:right;color:#fff;line-height:1;font-variant-numeric:tabular-nums;z-index:2}
+.hm-clock b{display:block;font-size:44px;font-weight:700;letter-spacing:1px;text-shadow:0 2px 10px rgba(0,0,0,.25)}
+.hm-clock small{display:block;margin-top:6px;font-size:12px;opacity:.85;letter-spacing:.5px}
+.hm-clock i{font-style:normal;animation:clk-b 1s steps(1) infinite}
+@keyframes clk-b{50%{opacity:.25}}
+@media(max-width:900px){.hm-clock{position:static;text-align:left;margin-top:12px}.hm-clock b{font-size:34px}}
+@media(prefers-reduced-motion:reduce){.hm-clock i{animation:none}}
 </style>
 </head>
 <body>
@@ -308,7 +317,7 @@ label{color:#5b6070;font-weight:600}
       <div class="lsw hm-lsw" role="group" aria-label="Language"><button data-ui="th">ไทย</button><button data-ui="en">EN</button><button data-ui="zh">中文</button></div>
       <div class="hm-kick" id="hmKick">GOOD DAY</div>
       <h2 id="hmHello">สวัสดี</h2>
-      <p id="hmDate" class="hm-date"></p><p id="hmSub">เอกสารข้อมูลสินค้าสำหรับหน้าร้าน ทำเสร็จได้ในไม่กี่ขั้นตอน</p>
+      <p id="hmDate" class="hm-date"></p><div class="hm-clock" id="hmClock" aria-hidden="true"><b id="hmClkT">--:--</b><small id="hmClkS"></small></div><p id="hmSub">เอกสารข้อมูลสินค้าสำหรับหน้าร้าน ทำเสร็จได้ในไม่กี่ขั้นตอน</p>
     </header>
     <div class="hm-grid" id="hmCards">
       <button class="hm-card" data-go="new"><span class="ic">＋</span><div><b data-i="c.new">สร้างสินค้าใหม่</b></div></button>
@@ -1343,6 +1352,16 @@ function applyTheme(){const pick="auto";
 const hasContent=s=>!!(s.code||s.nameTh||s.nameEn||s.menu||s.desc||s.allergen||(s.photos||[]).length||["phys","store","recv","rej","defect"].some(k=>(s[k]||[]).length));
 let USER_EDITED=false;document.querySelector(".panel").addEventListener("input",e=>{if(e.isTrusted)USER_EDITED=true});
 let HM_ANIM=true;
+
+/* นาฬิกา: อัปเดตทุกวินาทีเฉพาะตอนเห็นหน้าแรก */
+let CLK_H=-1;
+function tickClock(){const h=$("home");if(!h||h.hidden||document.hidden)return;const d=new Date(),L={th:"th-TH",en:"en-GB",zh:"zh-CN"}[UI]||"th-TH";
+  const hh=String(d.getHours()).padStart(2,"0"),mm=String(d.getMinutes()).padStart(2,"0");
+  $("hmClkT").innerHTML=hh+"<i>:</i>"+mm;
+  let tz="";try{tz=new Intl.DateTimeFormat(L,{timeZoneName:"short"}).formatToParts(d).find(x=>x.type==="timeZoneName").value}catch(e){}
+  $("hmClkS").textContent=String(d.getSeconds()).padStart(2,"0")+" s"+(tz?" · "+tz:"");
+  if(CLK_H!==-1&&CLK_H!==d.getHours())renderHome();CLK_H=d.getHours()}
+setInterval(tickClock,1000);document.addEventListener("visibilitychange",tickClock);
 const NAV={st:["home"],i:0,mv:false,hist:false};
 function navUI(){document.querySelectorAll("[data-nav=back]").forEach(b=>b.disabled=NAV.i<=0);document.querySelectorAll("[data-nav=fwd]").forEach(b=>b.disabled=NAV.i>=NAV.st.length-1);document.querySelectorAll(".mnav [data-nav=home]").forEach(b=>b.disabled=!$("home").hidden&&false)}
 function navPush(v){if(NAV.mv||NAV.st[NAV.i]===v){navUI();return}NAV.st=NAV.st.slice(0,NAV.i+1);NAV.st.push(v);NAV.i++;try{history.pushState({pi:NAV.i},"");NAV.hist=true}catch(e){}navUI()}
@@ -1362,6 +1381,7 @@ let HOME_ITEMS=null;
 const ago=ts=>{if(!ts)return"";const m=Math.round((Date.now()-ts)/6e4);return m<1?t("ago.now"):m<60?t("ago.min",m):m<1440?t("ago.hr",Math.round(m/60)):m<43200?t("ago.day",Math.round(m/1440)):new Date(ts).toLocaleDateString({th:"th-TH",en:"en-GB",zh:"zh-CN"}[UI])};
 function countUp(el){if(!el||el.dataset.done)return;const to=+el.textContent;if(!(to>0)||matchMedia("(prefers-reduced-motion: reduce)").matches){el.dataset.done=1;return}el.dataset.done=1;const t0=performance.now(),D=700;const f=t=>{const p=Math.min(1,(t-t0)/D),e=1-Math.pow(1-p,3);el.textContent=Math.round(to*e);if(p<1)requestAnimationFrame(f);else el.textContent=to};el.textContent=0;requestAnimationFrame(f)}
 async function renderHome(){
+  tickClock();
   applyTheme();
   const h=new Date().getHours(),g=t(h<11?"hi.m":h<17?"hi.a":"hi.e"),C=window.__cloud||{};
   {const k=h<12?"GOOD MORNING":h<17?"GOOD AFTERNOON":"GOOD EVENING";const e=$("hmKick");if(e)e.textContent=k;
