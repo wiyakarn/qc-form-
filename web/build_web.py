@@ -12,6 +12,10 @@ assert h.count("<body>\n")==1
 h=h.replace("<body>\n","<body>\n"+tag,1)
 os.makedirs(os.path.join(here,"dist"),exist_ok=True)
 open(os.path.join(here,"dist","index.html"),"w",encoding="utf8").write(h)
+ad=os.path.join(here,"assets");odd=os.path.join(here,"dist","assets")
+shutil.rmtree(odd,ignore_errors=True) if False else None
+if os.path.isdir(ad):
+    import shutil as _sh;_sh.rmtree(odd,ignore_errors=True);_sh.copytree(ad,odd)
 # login gallery: copy ./picture/* to dist/picture with a manifest
 import json,shutil,glob
 pd=os.path.join(here,"..","picture");od=os.path.join(here,"dist","picture")
