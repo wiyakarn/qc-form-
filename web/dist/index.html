@@ -394,15 +394,15 @@ const genPw=()=>{const c="abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789
 /* ===== หน้า login: คอลลาจรูปจากโฟลเดอร์ picture ===== */
 function lgArt(gate){
   if(!document.getElementById("lgArtCss")){const st=document.createElement("style");st.id="lgArtCss";st.textContent=`
-#loginGate{background:#fff !important}
-#loginGate .lg-art{position:fixed;inset:0;z-index:0;overflow:hidden;display:grid;gap:14px;padding:14px;grid-template-columns:repeat(var(--cols,4),1fr);grid-template-rows:repeat(var(--rows,1),1fr);background:#fff}
+#loginGate{background:#f4f6fb !important}
+#loginGate .lg-art{position:fixed;inset:0;z-index:1;overflow:hidden;display:grid;gap:14px;padding:14px;grid-template-columns:repeat(var(--cols,4),1fr);grid-template-rows:repeat(var(--rows,1),1fr);background:transparent}
 
 #loginGate .lg-t{min-height:0;min-width:0}
 #loginGate .lg-t{position:relative;border:0;padding:0;border-radius:20px;overflow:hidden;cursor:zoom-in;background:#f0f2f6;box-shadow:0 6px 18px rgba(19,32,60,.14);opacity:0;transform:translateY(14px) scale(.97);animation:lg-pop .7s cubic-bezier(.2,.8,.3,1) forwards;animation-delay:calc(var(--i)*90ms)}
 #loginGate .lg-t img{display:block;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transition:transform 6s ease-out}
 #loginGate .lg-t:hover img{transform:scale(1.06)}
 @keyframes lg-pop{to{opacity:1;transform:none}}
-#loginGate #lgForm{position:relative;z-index:2;background:rgba(255,255,255,.97) !important;backdrop-filter:blur(10px)}#loginGate .lg-logo{display:block;margin:0 auto 8px;height:42px;width:auto;max-width:60%}#loginGate .lg-corner{position:fixed;left:16px;top:14px;z-index:3;background:rgba(255,255,255,.92);border-radius:16px;padding:8px 14px;box-shadow:0 6px 18px rgba(19,32,60,.18);backdrop-filter:blur(8px)}#loginGate .lg-corner img{display:block;height:30px;width:auto}#loginGate .lg-art{display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:var(--g,14px)}#loginGate .lg-t{flex:0 0 var(--s,260px);width:var(--s,260px);height:var(--s,260px)}
+#loginGate .lg-bg{position:fixed;inset:-40px;z-index:0;display:flex;flex-wrap:wrap;overflow:hidden;filter:blur(34px) saturate(1.25);opacity:.55;pointer-events:none;transform:scale(1.1)}#loginGate .lg-bg img{flex:1 1 25%;min-width:25%;height:34vh;object-fit:cover}#loginGate .lg-bgv{position:fixed;inset:0;z-index:0;background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,.65));pointer-events:none}#loginGate #lgForm{position:relative;z-index:2;background:rgba(255,255,255,.97) !important;backdrop-filter:blur(10px)}#loginGate .lg-logo{display:block;margin:0 auto 8px;height:42px;width:auto;max-width:60%}#loginGate .lg-corner{position:fixed;left:16px;top:14px;z-index:3;background:rgba(255,255,255,.92);border-radius:16px;padding:8px 14px;box-shadow:0 6px 18px rgba(19,32,60,.18);backdrop-filter:blur(8px)}#loginGate .lg-corner img{display:block;height:30px;width:auto}#loginGate .lg-art{display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:var(--g,14px)}#loginGate .lg-t{flex:0 0 var(--s,260px);width:var(--s,260px);height:var(--s,260px)}
 #loginGate .lg-brand{position:relative;z-index:2;display:block;margin:0 auto 14px;height:44px;width:auto;filter:drop-shadow(0 2px 8px rgba(0,0,0,.35))}
 #loginGate .lg-wrap{position:relative;z-index:2;width:100%;max-width:350px;margin:auto}
 .lg-lb{position:fixed;inset:0;z-index:10001;background:rgba(8,14,30,.88);display:flex;align-items:center;justify-content:center;padding:18px;cursor:zoom-out}.lg-lb img{max-width:min(92vw,820px);max-height:88vh;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
@@ -418,6 +418,7 @@ function lgArt(gate){
       const im=document.createElement("img");im.src="picture/"+it.f;im.alt=it.alt||"";im.loading=i<4?"eager":"lazy";im.decoding="async";b.appendChild(im);
       b.onclick=()=>{const lb=document.createElement("div");lb.className="lg-lb";lb.setAttribute("role","dialog");lb.setAttribute("aria-label",it.alt||"photo");const big=document.createElement("img");big.src=im.src;big.alt=it.alt||"";lb.appendChild(big);const x=()=>{lb.remove();document.removeEventListener("keydown",k)};const k=e=>{if(e.key==="Escape")x()};document.addEventListener("keydown",k);lb.onclick=x;document.body.appendChild(lb)};
       art.appendChild(b)});
+    {const bg=document.createElement("div");bg.className="lg-bg";bg.setAttribute("aria-hidden","true");list.forEach(it=>{if(!/^[\w.\-]+$/.test(it.f||""))return;const im=document.createElement("img");im.src="picture/"+it.f;im.alt="";im.loading="lazy";bg.appendChild(im)});const v=document.createElement("div");v.className="lg-bgv";gate.insertBefore(v,gate.firstChild);gate.insertBefore(bg,gate.firstChild)}
     gate.insertBefore(art,gate.firstChild);if(!gate.querySelector(".lg-corner")){const cn=document.createElement("div");cn.className="lg-corner";cn.innerHTML='<img src="assets/minor-food.png" alt="Minor Food">';gate.appendChild(cn)}
     const f=gate.querySelector("#lgForm");if(f&&!f.parentElement.classList.contains("lg-wrap")){const w=document.createElement("div");w.className="lg-wrap";f.parentElement.insertBefore(w,f);w.appendChild(f)}
   }).catch(()=>{});
