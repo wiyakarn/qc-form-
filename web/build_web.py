@@ -12,4 +12,27 @@ assert h.count("<body>\n")==1
 h=h.replace("<body>\n","<body>\n"+tag,1)
 os.makedirs(os.path.join(here,"dist"),exist_ok=True)
 open(os.path.join(here,"dist","index.html"),"w",encoding="utf8").write(h)
-print("built",len(h))
+# login gallery: copy ./picture/* to dist/picture with a manifest
+import json,shutil,glob
+pd=os.path.join(here,"..","picture");od=os.path.join(here,"dist","picture")
+shutil.rmtree(od,ignore_errors=True)
+man=[]
+if os.path.isdir(pd):
+    os.makedirs(od,exist_ok=True)
+    try:
+        from PIL import Image
+    except Exception:
+        Image=None
+    for f in sorted(glob.glob(os.path.join(pd,"*"))):
+        ext=os.path.splitext(f)[1].lower()
+        if ext not in (".jpg",".jpeg",".png",".webp"):continue
+        name=os.path.basename(f);w=h2=0
+        if Image:
+            im=Image.open(f);w,h2=im.size
+            if max(w,h2)>1100 or os.path.getsize(f)>300000:
+                im=im.convert("RGB");im.thumbnail((1100,1100));name=os.path.splitext(name)[0]+".jpg";im.save(os.path.join(od,name),quality=80,optimize=True);w,h2=im.size
+            else:shutil.copy(f,os.path.join(od,name))
+        else:shutil.copy(f,os.path.join(od,name))
+        man.append({"f":name,"w":w,"h":h2,"alt":os.path.splitext(name)[0].replace("-"," ").replace("_"," ").title()})
+    json.dump(man,open(os.path.join(od,"index.json"),"w",encoding="utf8"),ensure_ascii=False)
+print("built",len(h),"pictures",len(man))

@@ -360,7 +360,7 @@ function showLogin(){
       <p id="lgMatch" aria-live="polite" style="font-size:12.5px;margin:-6px 0 10px 8px;min-height:16px;color:#1d6f42"></p>
       <button id="lgBtn" type="submit" style="width:100%;padding:13px;font:inherit;font-size:15px;font-weight:700;color:#fff;background:linear-gradient(180deg,#2a4278,#13203c);border:0;border-radius:999px;box-shadow:0 6px 16px rgba(19,32,60,.3);cursor:pointer"></button>
       <p id="lgMsg" role="status" style="font-size:13px;margin-top:14px;min-height:20px;color:#c0392b"></p></form>`;
-    document.body.appendChild(o);
+    document.body.appendChild(o);try{lgArt(o)}catch(e){}
     o.querySelector("#lgLang").onclick=e=>{const b=e.target.closest("button[data-l]");if(!b)return;try{localStorage.setItem("pi.ui",b.dataset.l)}catch(x){}o.remove();showLogin()};
     const $$=s=>o.querySelector(s),m=$$("#lgMsg"),b=$$("#lgBtn");let mode="in";
     const setMode=md=>{mode=md;const up=md==="up";
@@ -389,6 +389,37 @@ async function fn(name,body){const{data:s}=await sb.auth.getSession();if(!s.sess
   const j=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(j.error||"error");e.code=j.error;throw e}return j}
 const ADM_ERR={weak_password:"รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร",bad_email:"อีเมลไม่ถูกต้อง",forbidden:"ไม่มีสิทธิ์ (เฉพาะผู้ดูแล)",cannot_self:"ทำกับบัญชีของตัวเองไม่ได้"};
 const genPw=()=>{const c="abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";const a=new Uint32Array(12);crypto.getRandomValues(a);return Array.from(a,x=>c[x%c.length]).join("")};
+
+/* ===== หน้า login: คอลลาจรูปจากโฟลเดอร์ picture ===== */
+function lgArt(gate){
+  if(!document.getElementById("lgArtCss")){const st=document.createElement("style");st.id="lgArtCss";st.textContent=`
+#loginGate{background:#0e1a35 !important}
+#loginGate .lg-art{position:fixed;inset:0;z-index:0;overflow:hidden;display:grid;gap:14px;padding:14px;grid-template-columns:repeat(var(--cols,4),1fr);grid-template-rows:repeat(var(--rows,1),1fr);background:linear-gradient(135deg,#13203c,#1b3a63 60%,#0e1a35)}
+#loginGate .lg-art::after{content:"";position:absolute;inset:0;background:radial-gradient(520px 420px at 50% 50%,rgba(14,26,53,.55),rgba(14,26,53,0) 75%),linear-gradient(180deg,rgba(14,26,53,.12),rgba(14,26,53,.35));pointer-events:none}
+#loginGate .lg-t{min-height:0;min-width:0}
+#loginGate .lg-t{position:relative;border:0;padding:0;border-radius:20px;overflow:hidden;cursor:zoom-in;background:#1b2b52;box-shadow:0 10px 26px rgba(0,0,0,.35);opacity:0;transform:translateY(14px) scale(.97);animation:lg-pop .7s cubic-bezier(.2,.8,.3,1) forwards;animation-delay:calc(var(--i)*90ms)}
+#loginGate .lg-t img{display:block;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transition:transform 6s ease-out}
+#loginGate .lg-t:hover img{transform:scale(1.06)}
+@keyframes lg-pop{to{opacity:1;transform:none}}
+#loginGate #lgForm{position:relative;z-index:2;background:rgba(255,255,255,.96) !important;backdrop-filter:blur(10px)}
+#loginGate .lg-brand{position:relative;z-index:2;display:block;margin:0 auto 14px;height:44px;width:auto;filter:drop-shadow(0 2px 8px rgba(0,0,0,.35))}
+#loginGate .lg-wrap{position:relative;z-index:2;width:100%;max-width:400px;margin:auto}
+.lg-lb{position:fixed;inset:0;z-index:10001;background:rgba(8,14,30,.88);display:flex;align-items:center;justify-content:center;padding:18px;cursor:zoom-out}.lg-lb img{max-width:min(92vw,820px);max-height:88vh;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+@media(max-width:900px){#loginGate .lg-art{gap:8px;padding:8px}#loginGate .lg-art::after{background:linear-gradient(180deg,rgba(14,26,53,.25),rgba(14,26,53,.6))}}
+@media(prefers-reduced-motion:reduce){#loginGate .lg-t{animation:none;opacity:1;transform:none}#loginGate .lg-t img{transition:none}}`;document.head.appendChild(st)}
+  fetch("picture/index.json",{cache:"no-cache"}).then(r=>r.ok?r.json():[]).then(list=>{
+    if(!Array.isArray(list)||!list.length||!document.body.contains(gate))return;
+    const art=document.createElement("div");art.className="lg-art";art.setAttribute("aria-label","Gallery");
+    const N=list.length,W=innerWidth,H=innerHeight,cols=Math.max(1,Math.min(N,Math.ceil(Math.sqrt(N*W/H)))),rows=Math.ceil(N/cols);art.style.setProperty("--cols",cols);art.style.setProperty("--rows",rows);
+    const ars=["1/1","4/5","5/4","1/1","4/5"];
+    list.forEach((it,i)=>{if(!/^[\w.\-]+$/.test(it.f||""))return;const b=document.createElement("button");b.type="button";b.className="lg-t";b.style.setProperty("--i",i);b.style.setProperty("--ar",it.w&&it.h?(it.w+"/"+it.h):ars[i%ars.length]);b.setAttribute("aria-label",it.alt||"photo");b.tabIndex=-1;
+      const im=document.createElement("img");im.src="picture/"+it.f;im.alt=it.alt||"";im.loading=i<4?"eager":"lazy";im.decoding="async";b.appendChild(im);
+      b.onclick=()=>{const lb=document.createElement("div");lb.className="lg-lb";lb.setAttribute("role","dialog");lb.setAttribute("aria-label",it.alt||"photo");const big=document.createElement("img");big.src=im.src;big.alt=it.alt||"";lb.appendChild(big);const x=()=>{lb.remove();document.removeEventListener("keydown",k)};const k=e=>{if(e.key==="Escape")x()};document.addEventListener("keydown",k);lb.onclick=x;document.body.appendChild(lb)};
+      if(i===N-1){const rem=cols*rows-(N-1);if(rem>1)b.style.gridColumn="span "+rem}art.appendChild(b)});
+    gate.insertBefore(art,gate.firstChild);
+    const f=gate.querySelector("#lgForm");if(f&&!f.parentElement.classList.contains("lg-wrap")){const w=document.createElement("div");w.className="lg-wrap";f.parentElement.insertBefore(w,f);w.appendChild(f)}
+  }).catch(()=>{});
+}
 function modal(html){const o=document.createElement("div");o.className="ov";o.style.zIndex=60;o.innerHTML=`<div class="md" role="dialog" aria-modal="true" style="max-width:760px">${html}</div>`;document.body.appendChild(o);o.addEventListener("click",e=>{if(e.target===o||e.target.closest("[data-x]"))o.remove()});return o}
 const E=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 async function logout(){
